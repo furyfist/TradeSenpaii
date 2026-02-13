@@ -1,0 +1,16 @@
+# Database credentials
+*.env
+config.ini
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database dumps
+*.sql.gz
+*.dump
