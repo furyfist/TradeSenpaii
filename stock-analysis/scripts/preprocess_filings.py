@@ -3,15 +3,11 @@ import pandas as pd
 from pathlib import Path
 from html.parser import HTMLParser
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
+# Config
 INDEX_CSV   = Path("data/raw/sec_filings/filings_index.csv")
 OUTPUT_CSV  = Path("data/processed/sec_sentiment_input.csv")
 
-# ─────────────────────────────────────────────
 # HTML STRIPPER
-# ─────────────────────────────────────────────
 class HTMLStripper(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -35,10 +31,7 @@ def strip_html(text: str) -> str:
         return re.sub(r"<[^>]+>", " ", text)
 
 
-# ─────────────────────────────────────────────
 # CORE: Extract primary document text from
-# full-submission.txt using <DOCUMENT> blocks
-# ─────────────────────────────────────────────
 def extract_primary_document_from_submission(submission_path: Path, form_type: str) -> str | None:
     """
     full-submission.txt bundles all documents like:
@@ -97,10 +90,7 @@ def extract_primary_document_from_submission(submission_path: Path, form_type: s
 
     return None
 
-
-# ─────────────────────────────────────────────
 # DETECT JUNK: Is this an EDGAR directory page?
-# ─────────────────────────────────────────────
 def is_directory_junk(text: str) -> bool:
     """
     EDGAR index/directory pages have fingerprints we can detect.
@@ -119,9 +109,7 @@ def is_directory_junk(text: str) -> bool:
     return hits >= 2
 
 
-# ─────────────────────────────────────────────
-# TEXT CLEANING
-# ─────────────────────────────────────────────
+# Text cleaning
 def clean_text(raw: str) -> str:
     # Strip HTML
     text = strip_html(raw)
@@ -159,10 +147,7 @@ def clean_text(raw: str) -> str:
 
     return text
 
-
-# ─────────────────────────────────────────────
-# SECTION EXTRACTION
-# ─────────────────────────────────────────────
+# Section Extraction
 def extract_relevant_section(text: str, form_type: str) -> str:
     if form_type == "8-K":
         # 8-Ks are short — use the whole thing
@@ -204,9 +189,7 @@ def extract_relevant_section(text: str, form_type: str) -> str:
     return section[:6000]   # Cap for FinBERT chunking
 
 
-# ─────────────────────────────────────────────
-# MAIN PIPELINE
-# ─────────────────────────────────────────────
+# Main Pipeline
 def preprocess_filings():
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
