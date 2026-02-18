@@ -14,3 +14,6 @@ Thumbs.db
 # Database dumps
 *.sql.gz
 *.dump
+
+venv/
+stock-analysis/data/raw/sec_filings
