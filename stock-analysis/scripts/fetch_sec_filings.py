@@ -35,37 +35,38 @@ def extract_date_from_accession(accession: str) -> str | None:
 
 def parse_filing_date(filing_dir: Path) -> str | None:
     """
-    sec_edger_downloader saves a 'filing-details.xml' inside each accession folder.
-    we pull the filing date from there
+    Reads full-submission.txt and extracts the FILED AS OF DATE field.
+    Format in file: FILED AS OF DATE:               20000126  (YYYYMMDD)
     """
-    details_file = filing_dir / "filing-details.xml"
-    if not details_file.exists():
+    submission_file = filing_dir / "full-submission.txt"
+    if not submission_file.exists():
         return None
-    
-    content = details_file.read_text(encoding="utf-8", errors="replace")
 
-    # The filling date in a tag like: <filing-date> 1994-02-15 </filing-date>
-    match = re.search(r"<filing-date>(\d{4}-\d{2}-\d{2})</filing-date>", content)
+    content = submission_file.read_text(encoding="utf-8", errors="replace")
+
+    match = re.search(r"FILED AS OF DATE:\s+(\d{8})", content)
     if match:
-        return match.group(1)
-    
-    # fallback: try <date-filed> tag (older EDGAR format)
-    match = re.search(r"<date-filed>(\d{4}-\d{2}-\d{2})</date-filed>", content)
-    if match:
-        return match.group(1)
+        raw = match.group(1)                          # e.g. "20000126"
+        return f"{raw[:4]}-{raw[4:6]}-{raw[6:]}"     # → "2000-01-26"
 
     return None
 
 def find_primary_document(filing_dir: Path) -> Path | None:
     """
-    sec_edgar_downloader names the main file 'primary-document.html' or
-    'primary-document.htm' or occasionally 'primary-document.txt'.
-    Returns the path if found.
+    Handles both newer filings (with extension) and older ones (no extension).
+    Falls back to full-submission.txt if nothing else found.
     """
-    for ext in ["primary-document.html", "primary-document.htm", "primary-document.txt"]:
-        candidate = filing_dir / ext
+    for name in ["primary-document.html", "primary-document.htm",
+                 "primary-document.txt", "primary-document"]:
+        candidate = filing_dir / name
         if candidate.exists():
             return candidate
+
+    # Last resort fallback
+    fallback = filing_dir / "full-submission.txt"
+    if fallback.exists():
+        return fallback
+
     return None
 
 def build_filings_index() -> pd.DataFrame:
@@ -126,7 +127,7 @@ if __name__ == "__main__":
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     # Step 1 — Download
-    download_all_filings()
+    # download_all_filings()
 
     # Step 2 — Build index
     df = build_filings_index()
