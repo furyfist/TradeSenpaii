@@ -16,4 +16,5 @@ Thumbs.db
 *.dump
 
 venv/
-stock-analysis/data/raw/sec_filings
+#stock-analysis/data/raw/sec_filings
+stock-analysis/data/raw/sec_filings/sec-edgar-filings/KO/
