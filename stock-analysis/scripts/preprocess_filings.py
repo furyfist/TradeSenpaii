@@ -150,22 +150,30 @@ def clean_text(raw: str) -> str:
 # Section Extraction
 def extract_relevant_section(text: str, form_type: str) -> str:
     if form_type == "8-K":
-        # 8-Ks are short — use the whole thing
-        return text[:5000]
+        # Extract Item sections — these contain the actual event description
+        item_pattern = re.compile(
+            r"(item\s+\d+[\.\d]*\s*[-–]?\s*(?!amendment).*?)\n(.*?)(?=item\s+\d+|signature|$)",
+            re.IGNORECASE | re.DOTALL
+        )
+        matches = item_pattern.findall(text)
+        if matches:
+            # Concatenate all item bodies, skip pure header lines
+            bodies = [m[1].strip() for m in matches if len(m[1].strip()) > 100]
+            if bodies:
+                return " ".join(bodies)[:5000]
 
-    # For 10-Q and 10-K: extract MD&A section
-    # Real filings use many variations of this heading
+        return text[:5000]
+    
+    # 10-Q and 10-K: MD&A as before
     mda_start_pattern = re.compile(
-        r"(item\s*[27][\.\s]*"                          # Item 2. or Item 7.
+        r"(item\s*[27][\.\s]*"
         r"(?:management[\s\'s]*"
         r"(?:discussion|discussion and analysis)"
-        r"(?:\s+of\s+financial\s+condition)?)"          # optional suffix
+        r"(?:\s+of\s+financial\s+condition)?)"
         r"|"
-        r"management[\s\'s]+discussion\s+and\s+analysis)",  # or standalone heading
+        r"management[\s\'s]+discussion\s+and\s+analysis)",
         re.IGNORECASE
     )
-
-    # Where MD&A ends — next major section
     mda_end_pattern = re.compile(
         r"(item\s*[3-9]\b"
         r"|quantitative\s+and\s+qualitative"
@@ -178,15 +186,13 @@ def extract_relevant_section(text: str, form_type: str) -> str:
 
     start_match = mda_start_pattern.search(text)
     if not start_match:
-        # MD&A not found — fall back to first 3000 chars
         return text[:3000]
 
-    start_pos   = start_match.end()
-    end_match   = mda_end_pattern.search(text, start_pos + 200)  # +200 to skip the heading itself
-    end_pos     = end_match.start() if end_match else start_pos + 8000
+    start_pos = start_match.end()
+    end_match = mda_end_pattern.search(text, start_pos + 200)
+    end_pos   = end_match.start() if end_match else start_pos + 8000
 
-    section = text[start_pos:end_pos].strip()
-    return section[:6000]   # Cap for FinBERT chunking
+    return text[start_pos:end_pos].strip()[:6000]
 
 
 # Main Pipeline
