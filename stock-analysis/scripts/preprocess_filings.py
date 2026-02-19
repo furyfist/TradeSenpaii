@@ -3,15 +3,11 @@ import pandas as pd
 from pathlib import Path
 from html.parser import HTMLParser
 
-# ─────────────────────────────────────────────
 # CONFIG
-# ─────────────────────────────────────────────
 INDEX_CSV   = Path("data/raw/sec_filings/filings_index.csv")
 OUTPUT_CSV  = Path("data/processed/sec_sentiment_input.csv")
 
-# ─────────────────────────────────────────────
 # HTML STRIPPER
-# ─────────────────────────────────────────────
 class HTMLStripper(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -34,9 +30,7 @@ def strip_html(text: str) -> str:
         return re.sub(r"<[^>]+>", " ", text)
 
 
-# ─────────────────────────────────────────────
 # EXTRACT PRIMARY DOCUMENT FROM full-submission.txt
-# ─────────────────────────────────────────────
 def extract_primary_document_from_submission(submission_path: Path, form_type: str) -> str | None:
     if not submission_path.exists():
         return None
@@ -70,9 +64,7 @@ def extract_primary_document_from_submission(submission_path: Path, form_type: s
     return None
 
 
-# ─────────────────────────────────────────────
 # JUNK DETECTOR
-# ─────────────────────────────────────────────
 def is_directory_junk(text: str) -> bool:
     junk_signals = [
         "Parent Directory", "global-search-form",
@@ -82,12 +74,10 @@ def is_directory_junk(text: str) -> bool:
     return sum(1 for s in junk_signals if s in text) >= 2
 
 
-# ─────────────────────────────────────────────
 # STRIP TAIL BOILERPLATE
 # Removes signatures, certifications, exhibit lists
 # that appear AFTER the real content — these add
 # noise to LM word counts without adding signal
-# ─────────────────────────────────────────────
 def strip_tail_boilerplate(text: str) -> str:
     # These patterns mark the end of real content
     tail_markers = [
@@ -110,10 +100,7 @@ def strip_tail_boilerplate(text: str) -> str:
         return text[:match.start()].strip()
     return text
 
-
-# ─────────────────────────────────────────────
 # CLEAN TEXT
-# ─────────────────────────────────────────────
 def clean_text(raw: str) -> str:
     # Strip HTML
     text = strip_html(raw)
@@ -147,12 +134,9 @@ def clean_text(raw: str) -> str:
 
     return text
 
-
-# ─────────────────────────────────────────────
 # SECTION EXTRACTION
 # No character caps — let full sections through
 # for better LM word count coverage
-# ─────────────────────────────────────────────
 def extract_relevant_section(text: str, form_type: str) -> str:
     # Strip tail boilerplate first regardless of form type
     text = strip_tail_boilerplate(text)
@@ -209,9 +193,7 @@ def extract_relevant_section(text: str, form_type: str) -> str:
     return section
 
 
-# ─────────────────────────────────────────────
 # MAIN PIPELINE
-# ─────────────────────────────────────────────
 def preprocess_filings():
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 

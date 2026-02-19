@@ -2,18 +2,14 @@ import re
 import pandas as pd
 from pathlib import Path
 
-# ─────────────────────────────────────────────
 # CONFIG
-# ─────────────────────────────────────────────
 INPUT_CSV  = Path("data/processed/sec_sentiment_input.csv")
 OUTPUT_CSV = Path("data/processed/sec_sentiment_features.csv")
 
-# ─────────────────────────────────────────────
 # LOUGHRAN-McDONALD DICTIONARY
 # Source: https://sraf.nd.edu/loughranmcdonald-master-dictionary/
 # These are the core word lists from the 2011 paper
 # "When Is a Liability Not a Liability?" — Journal of Finance
-# ─────────────────────────────────────────────
 LM_POSITIVE = {
     "able", "abundant", "acclaimed", "achieve", "acumen", "adaptable",
     "adequate", "admirable", "advancement", "advantage", "advantaged",
@@ -98,9 +94,7 @@ LM_CONSTRAINING = {
 }
 
 
-# ─────────────────────────────────────────────
 # TOKENIZER — simple, fast, no external deps
-# ─────────────────────────────────────────────
 def tokenize(text: str) -> list:
     """Lowercase and split into words, strip punctuation."""
     text  = text.lower()
@@ -108,9 +102,7 @@ def tokenize(text: str) -> list:
     return words
 
 
-# ─────────────────────────────────────────────
 # SCORE ONE FILING
-# ─────────────────────────────────────────────
 def score_filing(text: str) -> dict:
     words       = tokenize(text)
     total_words = len(words)
@@ -158,9 +150,7 @@ def score_filing(text: str) -> dict:
     }
 
 
-# ─────────────────────────────────────────────
 # MAIN
-# ─────────────────────────────────────────────
 def run_lm_sentiment():
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
 
