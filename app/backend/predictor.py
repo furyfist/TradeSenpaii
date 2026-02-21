@@ -56,7 +56,7 @@ class StockTransformer(nn.Module):
 class Predictor:
     def __init__(self):
         print("[INFO] Loading Transformer model...")
-        checkpoint = torch.load(MODEL_PATH, map_location="cpu")
+        checkpoint = torch.load(MODEL_PATH, map_location="cpu", weights_only=False)
 
         self.feature_cols  = checkpoint["feature_cols"]
         self.sequence_len  = checkpoint["sequence_len"]
