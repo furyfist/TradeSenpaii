@@ -41,7 +41,7 @@ def predict():
         now = datetime.now()
         if (
             _cache["prediction"] is not None and
-            _cache["timestamp"] is not None and
+            _cache["timestamp"] is not/ None and
             (now - _cache["timestamp"]).seconds < CACHE_TTL_MINUTES * 60
         ):
             print("[INFO] Returning cached prediction")
