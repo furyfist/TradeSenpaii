@@ -5,15 +5,19 @@ from datetime import datetime, timedelta
 from sentiment_loader import load_latest_sentiment
 
 
+import time
+
 def fetch_recent_prices(ticker: str = "KO", days: int = 500) -> pd.DataFrame:
-    """
-    Fetches recent OHLCV data — needs 500 days to compute
-    all rolling features (ma_200 needs 200 days minimum)
-    """
     end   = datetime.today()
     start = end - timedelta(days=days)
-    df    = yf.download(ticker, start=start, end=end, progress=False)
-
+    
+    for attempt in range(3):       # retry up to 3 times
+        df = yf.download(ticker, start=start, end=end, progress=False)
+        if len(df) > 0:
+            break
+        print(f"[WARN] yfinance returned empty data, retry {attempt+1}/3...")
+        time.sleep(2)
+    
     df = df.reset_index()
     df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower()
                   for c in df.columns]

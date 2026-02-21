@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 import traceback
 
-
 from models import (
     PredictionResponse, PriceHistoryResponse,
     SentimentHistoryResponse, ModelInfoResponse,
@@ -31,10 +30,23 @@ app.add_middleware(
 def health():
     return {"status": "ok", "timestamp": str(datetime.now())}
 
+# Simple in-memory cache
+_cache = {"prediction": None, "timestamp": None}
+CACHE_TTL_MINUTES = 30
 
 @app.get("/predict", response_model=PredictionResponse)
 def predict():
     try:
+        # Return cached result if fresh
+        now = datetime.now()
+        if (
+            _cache["prediction"] is not None and
+            _cache["timestamp"] is not None and
+            (now - _cache["timestamp"]).seconds < CACHE_TTL_MINUTES * 60
+        ):
+            print("[INFO] Returning cached prediction")
+            return _cache["prediction"]
+
         feature_df, price_df = get_latest_feature_row("KO")
         result    = predictor.predict(feature_df)
         sentiment = load_latest_sentiment()
@@ -42,7 +54,7 @@ def predict():
         last_date = pd.to_datetime(price_df["date"].iloc[-1])
         next_day  = last_date + timedelta(days=1)
 
-        return PredictionResponse(
+        response = PredictionResponse(
             ticker          = "KO",
             prediction      = result["prediction"],
             confidence      = result["confidence"],
@@ -55,7 +67,15 @@ def predict():
                               else "Neutral"),
             model_accuracy  = predictor.cv_accuracy,
         )
+
+        # Store in cache
+        _cache["prediction"] = response
+        _cache["timestamp"]  = now
+
+        return response
+
     except Exception as e:
+        import traceback
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
