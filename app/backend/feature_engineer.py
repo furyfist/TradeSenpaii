@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 from sentiment_loader import load_latest_sentiment
 
 
-def fetch_recent_prices(ticker: str = "KO", days: int = 300) -> pd.DataFrame:
+def fetch_recent_prices(ticker: str = "KO", days: int = 500) -> pd.DataFrame:
     """
-    Fetches recent OHLCV data — needs 300 days to compute
+    Fetches recent OHLCV data — needs 500 days to compute
     all rolling features (ma_200 needs 200 days minimum)
     """
     end   = datetime.today()
@@ -120,7 +120,7 @@ def get_latest_feature_row(ticker: str = "KO") -> tuple[pd.DataFrame, dict]:
     Returns (feature_df, raw_price_df)
     """
     print("[INFO] Fetching latest KO prices...")
-    price_df   = fetch_recent_prices(ticker)
+    price_df   = fetch_recent_prices(ticker, days=500)
 
     print("[INFO] Loading latest sentiment...")
     sentiment  = load_latest_sentiment()

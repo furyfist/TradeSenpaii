@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
+import traceback
+
 
 from models import (
     PredictionResponse, PriceHistoryResponse,
@@ -54,6 +56,7 @@ def predict():
             model_accuracy  = predictor.cv_accuracy,
         )
     except Exception as e:
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
