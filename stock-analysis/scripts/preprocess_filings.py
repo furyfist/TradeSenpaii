@@ -2,6 +2,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 from config import sentiment_input_path, filings_index_path
+from html.parser import HTMLParser
+import re
+import pandas as pd
 
 import argparse
 parser = argparse.ArgumentParser()

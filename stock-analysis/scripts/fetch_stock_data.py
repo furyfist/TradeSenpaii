@@ -15,7 +15,6 @@ args   = parser.parse_args()
 
 TICKER = args.ticker
 
-# ─────────────────────────────────────────────
 def fetch_and_engineer(ticker: str) -> pd.DataFrame:
     print(f"[INFO] Downloading {ticker} price data...")
     df = yf.download(ticker, start="1994-01-01", end=datetime.today().strftime("%Y-%m-%d"), progress=False)
