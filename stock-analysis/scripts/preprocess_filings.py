@@ -1,11 +1,15 @@
-import re
-import pandas as pd
+import sys
 from pathlib import Path
-from html.parser import HTMLParser
+sys.path.append(str(Path(__file__).parent))
+from config import sentiment_input_path, filings_index_path
 
-# CONFIG
-INDEX_CSV   = Path("data/raw/sec_filings/filings_index.csv")
-OUTPUT_CSV  = Path("data/processed/sec_sentiment_input.csv")
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--ticker", required=True)
+args = parser.parse_args()
+
+INDEX_CSV  = filings_index_path(args.ticker)
+OUTPUT_CSV = sentiment_input_path(args.ticker)
 
 # HTML STRIPPER
 class HTMLStripper(HTMLParser):
