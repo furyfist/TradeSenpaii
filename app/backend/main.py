@@ -1,23 +1,24 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
-import traceback
 
 from models import (
     PredictionResponse, PriceHistoryResponse,
     SentimentHistoryResponse, ModelInfoResponse,
-    PricePoint, SentimentPoint
+    PricePoint, SentimentPoint, SUPPORTED_TICKERS
 )
 from predictor import Predictor
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
 from sentiment_loader import load_sentiment_history, load_latest_sentiment
 
-# ── Init ──
-app       = FastAPI(title="TradeSenpai API", version="1.0.0")
+app       = FastAPI(title="TradeSenpai API v2", version="2.0.0")
 predictor = Predictor()
 
-# ── CORS — allow React dev server ──
+# Cache per ticker
+_cache: dict = {}
+CACHE_TTL_MINUTES = 30
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -25,37 +26,59 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ROUTES
+TICKER_NAMES = {
+    "KO":    "Coca-Cola",
+    "JNJ":   "Johnson & Johnson",
+    "PG":    "Procter & Gamble",
+    "WMT":   "Walmart",
+    "AAPL":  "Apple",
+    "GOOGL": "Alphabet",
+}
+
+
+def validate_ticker(ticker: str) -> str:
+    ticker = ticker.upper()
+    if ticker not in SUPPORTED_TICKERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported ticker '{ticker}'. Supported: {SUPPORTED_TICKERS}"
+        )
+    return ticker
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "timestamp": str(datetime.now())}
+    return {
+        "status":   "ok",
+        "version":  "2.0.0",
+        "tickers":  SUPPORTED_TICKERS,
+        "timestamp": str(datetime.now())
+    }
 
-# Simple in-memory cache
-_cache = {"prediction": None, "timestamp": None}
-CACHE_TTL_MINUTES = 30
 
 @app.get("/predict", response_model=PredictionResponse)
-def predict():
+def predict(ticker: str = Query(default="KO")):
+    ticker = validate_ticker(ticker)
     try:
-        # Return cached result if fresh
         now = datetime.now()
         if (
-            _cache["prediction"] is not None and
-            _cache["timestamp"] is not/ None and
-            (now - _cache["timestamp"]).seconds < CACHE_TTL_MINUTES * 60
+            ticker in _cache and
+            _cache[ticker].get("timestamp") and
+            (now - _cache[ticker]["timestamp"]).seconds < CACHE_TTL_MINUTES * 60
         ):
-            print("[INFO] Returning cached prediction")
-            return _cache["prediction"]
+            print(f"[INFO] Returning cached prediction for {ticker}")
+            return _cache[ticker]["prediction"]
 
-        feature_df, price_df = get_latest_feature_row("KO")
-        result    = predictor.predict(feature_df)
-        sentiment = load_latest_sentiment()
+        feature_df, price_df = get_latest_feature_row(ticker)
+        result    = predictor.predict(ticker, feature_df)
+        sentiment = load_latest_sentiment(ticker)
 
         last_date = pd.to_datetime(price_df["date"].iloc[-1])
         next_day  = last_date + timedelta(days=1)
 
         response = PredictionResponse(
-            ticker          = "KO",
+            ticker          = ticker,
+            name            = TICKER_NAMES.get(ticker, ticker),
             prediction      = result["prediction"],
             confidence      = result["confidence"],
             predicted_date  = str(next_day.date()),
@@ -65,13 +88,10 @@ def predict():
             sentiment_label = "Positive" if sentiment["lm_sentiment_score"] > 0.5
                               else ("Negative" if sentiment["lm_sentiment_score"] < -0.5
                               else "Neutral"),
-            model_accuracy  = predictor.cv_accuracy,
+            model_accuracy  = result["cv_accuracy"],
         )
 
-        # Store in cache
-        _cache["prediction"] = response
-        _cache["timestamp"]  = now
-
+        _cache[ticker] = {"prediction": response, "timestamp": now}
         return response
 
     except Exception as e:
@@ -81,12 +101,13 @@ def predict():
 
 
 @app.get("/price-history", response_model=PriceHistoryResponse)
-def price_history():
+def price_history(ticker: str = Query(default="KO")):
+    ticker = validate_ticker(ticker)
     try:
-        df = fetch_recent_prices("KO", days=100)
+        df = fetch_recent_prices(ticker, days=100)
         df = df.tail(90)
         return PriceHistoryResponse(
-            ticker="KO",
+            ticker=ticker,
             data=[
                 PricePoint(
                     date   = str(row["date"].date()),
@@ -104,11 +125,12 @@ def price_history():
 
 
 @app.get("/sentiment-history", response_model=SentimentHistoryResponse)
-def sentiment_history():
+def sentiment_history(ticker: str = Query(default="KO")):
+    ticker = validate_ticker(ticker)
     try:
-        data = load_sentiment_history(n=50)
+        data = load_sentiment_history(ticker, n=50)
         return SentimentHistoryResponse(
-            ticker="KO",
+            ticker=ticker,
             data=[SentimentPoint(**d) for d in data]
         )
     except Exception as e:
@@ -116,13 +138,23 @@ def sentiment_history():
 
 
 @app.get("/model-info", response_model=ModelInfoResponse)
-def model_info():
-    return ModelInfoResponse(
-        ticker         = "KO",
-        cv_accuracy    = predictor.cv_accuracy,
-        trained_on     = predictor.trained_on,
-        input_features = len(predictor.feature_cols),
-        sequence_len   = predictor.sequence_len,
-        model_type     = "Transformer (d_model=128, 3 layers, 4 heads)",
-        last_updated   = predictor.trained_on,
-    )
+def model_info(ticker: str = Query(default="KO")):
+    ticker = validate_ticker(ticker)
+    try:
+        info = predictor.get_model_info(ticker)
+        return ModelInfoResponse(**info)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/tickers")
+def get_tickers():
+    return {
+        "tickers": [
+            {
+                "ticker": t,
+                "name":   TICKER_NAMES[t],
+            }
+            for t in SUPPORTED_TICKERS
+        ]
+    }
