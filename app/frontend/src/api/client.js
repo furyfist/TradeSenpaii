@@ -5,7 +5,8 @@ const api = axios.create({
   timeout: 30000,
 });
 
-export const fetchPrediction     = () => api.get("/predict");
-export const fetchPriceHistory   = () => api.get("/price-history");
-export const fetchSentimentHistory = () => api.get("/sentiment-history");
-export const fetchModelInfo      = () => api.get("/model-info");
+export const fetchPrediction       = (ticker) => api.get(`/predict?ticker=${ticker}`);
+export const fetchPriceHistory     = (ticker) => api.get(`/price-history?ticker=${ticker}`);
+export const fetchSentimentHistory = (ticker) => api.get(`/sentiment-history?ticker=${ticker}`);
+export const fetchModelInfo        = (ticker) => api.get(`/model-info?ticker=${ticker}`);
+export const fetchTickers          = ()       => api.get("/tickers");

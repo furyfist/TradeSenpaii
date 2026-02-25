@@ -110,8 +110,14 @@ class Predictor:
         scaler_scale = state["scaler_scale"]
 
         available = [c for c in feature_cols if c in feature_df.columns]
+        # DEBUG
+        missing   = [c for c in feature_cols if c not in feature_df.columns]
+        print(f"[DEBUG] {ticker} — available: {len(available)}, missing: {missing}")
         X         = feature_df[available].values
         X_scaled  = (X - scaler_mean) / scaler_scale
+        # DEBUG
+        print(f"[DEBUG] X shape: {X.shape}, X_scaled shape: {X_scaled.shape}, NaN in X: {np.isnan(X).sum()}, Inf in X: {np.isinf(X).sum()}")
+        print(f"[DEBUG] feature_df shape: {feature_df.shape}")
 
         if len(X_scaled) < sequence_len:
             raise ValueError(f"Need at least {sequence_len} rows, got {len(X_scaled)}")
@@ -127,6 +133,8 @@ class Predictor:
         confidence = float(probs.max())
         prediction = "UP" if pred_class == 1 else "DOWN"
         top_signals = self._get_top_signals(feature_df[available].iloc[-1], prediction)
+
+        
 
         return {
             "prediction":  prediction,

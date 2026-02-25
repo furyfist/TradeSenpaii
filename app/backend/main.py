@@ -70,6 +70,7 @@ def predict(ticker: str = Query(default="KO")):
             return _cache[ticker]["prediction"]
 
         feature_df, price_df = get_latest_feature_row(ticker)
+        print(f"[DEBUG] feature_df shape in main: {feature_df.shape}")
         result    = predictor.predict(ticker, feature_df)
         sentiment = load_latest_sentiment(ticker)
 
