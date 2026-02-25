@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
+from contextlib import asynccontextmanager
 
 from models import (
     PredictionResponse, PriceHistoryResponse,
@@ -12,7 +13,21 @@ from predictor import Predictor
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
 from sentiment_loader import load_sentiment_history, load_latest_sentiment
 
-app       = FastAPI(title="TradeSenpai API v2", version="2.0.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Preload all models on startup so first request is fast
+    print("[STARTUP] Preloading all ticker models...")
+    for ticker in SUPPORTED_TICKERS:
+        try:
+            predictor._load_model(ticker)
+            print(f"[STARTUP] {ticker} model ready")
+        except Exception as e:
+            print(f"[STARTUP] Could not load {ticker}: {e}")
+    yield
+
+app = FastAPI(title="TradeSenpai API v2", version="2.0.0", lifespan=lifespan)
+
 predictor = Predictor()
 
 # Cache per ticker
