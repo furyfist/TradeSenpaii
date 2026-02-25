@@ -4,9 +4,9 @@ import { fetchExplanation } from "../api/client";
 
 export default function ExplanationPanel({ ticker, prediction }) {
   const [explanation, setExplanation] = useState(null);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState(null);
-  const [expanded,    setExpanded]    = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!ticker || !prediction) return;
@@ -29,7 +29,7 @@ export default function ExplanationPanel({ ticker, prediction }) {
 
   const tierColor = (tier) => {
     if (tier === "High Conviction") return "#22c55e";
-    if (tier === "Strong Signal")   return "#6366f1";
+    if (tier === "Strong Signal") return "#6366f1";
     if (tier === "Moderate Signal") return "#f59e0b";
     return "#64748b";
   };
@@ -71,8 +71,8 @@ export default function ExplanationPanel({ ticker, prediction }) {
                 <span style={{
                   ...styles.tierBadge,
                   background: `${tierColor(explanation.confidence_tier)}15`,
-                  color:       tierColor(explanation.confidence_tier),
-                  border:      `1px solid ${tierColor(explanation.confidence_tier)}30`,
+                  color: tierColor(explanation.confidence_tier),
+                  border: `1px solid ${tierColor(explanation.confidence_tier)}30`,
                 }}>
                   <Zap size={10} />
                   {explanation.confidence_tier}
@@ -113,33 +113,36 @@ export default function ExplanationPanel({ ticker, prediction }) {
                 </div>
                 <div style={styles.analogiesList}>
                   {explanation.analogies.map((a, i) => {
-                    const isUp    = a.actual_direction === "UP";
-                    const color   = isUp ? "#22c55e" : "#ef4444";
+                    const isUp = a.actual_direction === "UP";
+                    const color = isUp ? "#22c55e" : "#ef4444";
+
                     return (
                       <div key={i} style={styles.analogyCard}>
+
+                        {/* Top row — date, days ago, outcome */}
                         <div style={styles.analogyTop}>
                           <span style={styles.analogyDate}>{a.date}</span>
-                          <span style={styles.analogyDaysAgo}>
-                            {a.days_ago} days ago
-                          </span>
+                          <span style={styles.analogyDaysAgo}>{a.days_ago} days ago</span>
                           <span style={{
                             ...styles.analogyOutcome,
                             color,
                             background: `${color}15`,
                           }}>
                             {isUp
-                              ? <TrendingUp  size={10} />
+                              ? <TrendingUp size={10} />
                               : <TrendingDown size={10} />
                             }
                             {a.actual_direction} ({a.actual_return > 0 ? "+" : ""}
                             {a.actual_return.toFixed(2)}%)
                           </span>
                         </div>
+
+                        {/* Similarity bar */}
                         <div style={styles.analogySimilarity}>
                           <div style={styles.similarityBarBg}>
                             <div style={{
                               ...styles.similarityBarFill,
-                              width:      `${a.similarity * 100}%`,
+                              width: `${a.similarity * 100}%`,
                               background: color,
                             }} />
                           </div>
@@ -147,7 +150,8 @@ export default function ExplanationPanel({ ticker, prediction }) {
                             {(a.similarity * 100).toFixed(1)}% similar
                           </span>
                         </div>
-                        {/* Top 3 signals for this analogy */}
+
+                        {/* Key signals */}
                         <div style={styles.analogySignals}>
                           {Object.entries(a.key_signals).slice(0, 3).map(([k, v]) => (
                             <span key={k} style={styles.signalChip}>
@@ -155,6 +159,27 @@ export default function ExplanationPanel({ ticker, prediction }) {
                             </span>
                           ))}
                         </div>
+
+                        {/* Search context — what actually happened */}
+                        {a.search_context && (
+                          <div style={styles.searchContext}>
+                            <span style={styles.searchContextLabel}>📰 What happened:</span>
+                            <p style={styles.searchContextText}>{a.search_context}</p>
+                          </div>
+                        )}
+
+                        {/* Search button */}
+                        {a.search_url && (
+                          <a
+                            href={a.search_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={styles.searchBtn}
+                          >
+                            🔍 Search This Event
+                          </a>
+                        )}
+
                       </div>
                     );
                   })}
@@ -179,212 +204,283 @@ export default function ExplanationPanel({ ticker, prediction }) {
 
 const styles = {
   card: {
-    background:   "rgba(255,255,255,0.03)",
-    border:       "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 16,
-    overflow:     "hidden",
+    overflow: "hidden",
   },
   header: {
-    display:        "flex",
+    display: "flex",
     justifyContent: "space-between",
-    alignItems:     "center",
-    padding:        "16px 20px",
-    cursor:         "pointer",
-    userSelect:     "none",
+    alignItems: "center",
+    padding: "16px 20px",
+    cursor: "pointer",
+    userSelect: "none",
   },
   headerLeft: {
-    display:    "flex",
+    display: "flex",
     alignItems: "center",
-    gap:        8,
+    gap: 8,
   },
   title: {
-    fontSize:   14,
+    fontSize: 14,
     fontWeight: 600,
-    color:      "#e2e8f0",
+    color: "#e2e8f0",
   },
   badge: {
-    fontSize:   10,
-    color:      "#6366f1",
+    fontSize: 10,
+    color: "#6366f1",
     background: "rgba(99,102,241,0.1)",
-    padding:    "2px 6px",
+    padding: "2px 6px",
     borderRadius: 4,
   },
   expandBtn: {
     background: "none",
-    border:     "none",
-    color:      "#475569",
-    fontSize:   12,
-    cursor:     "pointer",
+    border: "none",
+    color: "#475569",
+    fontSize: 12,
+    cursor: "pointer",
   },
   content: {
-    padding:    "0 20px 20px",
-    borderTop:  "1px solid rgba(255,255,255,0.06)",
+    padding: "0 20px 20px",
+    borderTop: "1px solid rgba(255,255,255,0.06)",
     paddingTop: 16,
   },
   loadingState: {
-    display:        "flex",
-    alignItems:     "center",
-    gap:            12,
-    padding:        "20px 0",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "20px 0",
     justifyContent: "center",
   },
   spinner: {
-    width:        20,
-    height:       20,
-    border:       "2px solid rgba(99,102,241,0.2)",
-    borderTop:    "2px solid #6366f1",
+    width: 20,
+    height: 20,
+    border: "2px solid rgba(99,102,241,0.2)",
+    borderTop: "2px solid #6366f1",
     borderRadius: "50%",
-    animation:    "spin 1s linear infinite",
+    animation: "spin 1s linear infinite",
   },
   errorState: {
-    color:    "#ef4444",
+    color: "#ef4444",
     fontSize: 13,
-    padding:  "12px 0",
+    padding: "12px 0",
   },
   headline: {
     marginBottom: 12,
   },
   tierBadge: {
-    display:      "inline-flex",
-    alignItems:   "center",
-    gap:          4,
-    fontSize:     10,
-    fontWeight:   700,
-    padding:      "3px 8px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 10,
+    fontWeight: 700,
+    padding: "3px 8px",
     borderRadius: 20,
     marginBottom: 8,
     textTransform: "uppercase",
     letterSpacing: "0.3px",
   },
   headlineText: {
-    fontSize:   15,
+    fontSize: 15,
     fontWeight: 600,
-    color:      "#f1f5f9",
+    color: "#f1f5f9",
     lineHeight: 1.4,
-    margin:     0,
+    margin: 0,
   },
   explanationText: {
-    fontSize:   13,
-    color:      "#94a3b8",
+    fontSize: 13,
+    color: "#94a3b8",
     lineHeight: 1.7,
-    margin:     "12px 0 16px",
+    margin: "12px 0 16px",
   },
   twoCol: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap:     12,
+    gap: 12,
     marginBottom: 20,
   },
   infoBox: {
-    background:   "rgba(255,255,255,0.02)",
-    border:       "1px solid rgba(99,102,241,0.15)",
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid rgba(99,102,241,0.15)",
     borderRadius: 10,
-    padding:      "12px 14px",
+    padding: "12px 14px",
   },
   infoBoxHeader: {
-    display:      "flex",
-    alignItems:   "center",
-    gap:          5,
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
     marginBottom: 6,
   },
   infoBoxText: {
-    fontSize:   12,
-    color:      "#cbd5e1",
+    fontSize: 12,
+    color: "#cbd5e1",
     lineHeight: 1.5,
-    margin:     0,
+    margin: 0,
   },
   analogiesSection: { marginBottom: 16 },
   analogiesHeader: {
-    display:      "flex",
-    alignItems:   "center",
-    gap:          6,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
     marginBottom: 12,
   },
   analogiesTitle: {
-    fontSize:      12,
-    fontWeight:    600,
-    color:         "#94a3b8",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
   analogiesList: {
     display: "flex",
     flexDirection: "column",
-    gap:     8,
+    gap: 8,
   },
   analogyCard: {
-    background:   "rgba(255,255,255,0.02)",
-    border:       "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid rgba(255,255,255,0.06)",
     borderRadius: 10,
-    padding:      "10px 12px",
+    padding: "10px 12px",
   },
   analogyTop: {
-    display:      "flex",
-    alignItems:   "center",
-    gap:          8,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 8,
   },
   analogyDate: {
-    fontSize:   13,
+    fontSize: 13,
     fontWeight: 600,
-    color:      "#e2e8f0",
+    color: "#e2e8f0",
   },
   analogyDaysAgo: {
     fontSize: 11,
-    color:    "#475569",
-    flex:     1,
+    color: "#475569",
+    flex: 1,
   },
   analogyOutcome: {
-    display:      "inline-flex",
-    alignItems:   "center",
-    gap:          4,
-    fontSize:     11,
-    fontWeight:   700,
-    padding:      "2px 8px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    fontSize: 11,
+    fontWeight: 700,
+    padding: "2px 8px",
     borderRadius: 20,
   },
   analogySimilarity: {
-    display:      "flex",
-    alignItems:   "center",
-    gap:          8,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 8,
   },
   similarityBarBg: {
-    flex:         1,
-    height:       4,
-    background:   "rgba(255,255,255,0.06)",
+    flex: 1,
+    height: 4,
+    background: "rgba(255,255,255,0.06)",
     borderRadius: 99,
-    overflow:     "hidden",
+    overflow: "hidden",
   },
   similarityBarFill: {
-    height:       "100%",
+    height: "100%",
     borderRadius: 99,
-    transition:   "width 0.6s ease",
+    transition: "width 0.6s ease",
   },
   analogySignals: {
-    display:  "flex",
+    display: "flex",
     flexWrap: "wrap",
-    gap:      4,
+    gap: 4,
   },
   signalChip: {
-    fontSize:     10,
-    color:        "#64748b",
-    background:   "rgba(255,255,255,0.04)",
-    padding:      "2px 6px",
+    fontSize: 10,
+    color: "#64748b",
+    background: "rgba(255,255,255,0.04)",
+    padding: "2px 6px",
     borderRadius: 4,
   },
+  searchContext: {
+    marginTop: 10,
+    background: "rgba(99,102,241,0.06)",
+    border: "1px solid rgba(99,102,241,0.15)",
+    borderRadius: 8,
+    padding: "8px 10px",
+  },
+  searchContextLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#818cf8",
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
+  },
+  searchContextText: {
+    fontSize: 12,
+    color: "#94a3b8",
+    lineHeight: 1.6,
+    margin: "4px 0 0",
+  },
+  searchBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#818cf8",
+    background: "rgba(99,102,241,0.1)",
+    border: "1px solid rgba(99,102,241,0.25)",
+    borderRadius: 6,
+    padding: "4px 10px",
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "background 0.2s",
+  },
   historicalNote: {
-    fontSize:   12,
-    color:      "#6366f1",
-    marginTop:  12,
+    fontSize: 12,
+    color: "#6366f1",
+    marginTop: 12,
     lineHeight: 1.5,
-    margin:     "12px 0 0",
+    margin: "12px 0 0",
   },
   disclaimer: {
-    fontSize:   10,
-    color:      "#334155",
-    marginTop:  16,
+    fontSize: 10,
+    color: "#334155",
+    marginTop: 16,
     lineHeight: 1.5,
-    margin:     "16px 0 0",
+    margin: "16px 0 0",
+  },
+  searchContext: {
+    marginTop: 10,
+    padding: "8px 10px",
+    background: "rgba(99,102,241,0.05)",
+    borderRadius: 8,
+    border: "1px solid rgba(99,102,241,0.1)",
+  },
+  searchContextLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: "#6366f1",
+    textTransform: "uppercase",
+    letterSpacing: "0.3px",
+    display: "block",
+    marginBottom: 4,
+  },
+  searchContextText: {
+    fontSize: 12,
+    color: "#94a3b8",
+    lineHeight: 1.6,
+    margin: 0,
+  },
+  searchBtn: {
+    display: "inline-block",
+    marginTop: 8,
+    fontSize: 11,
+    color: "#6366f1",
+    background: "rgba(99,102,241,0.08)",
+    border: "1px solid rgba(99,102,241,0.2)",
+    borderRadius: 6,
+    padding: "4px 10px",
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "background 0.2s",
   },
 };
