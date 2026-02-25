@@ -3,6 +3,8 @@ import PredictionCard  from "./components/PredictionCard";
 import PriceChart      from "./components/PriceChart";
 import SentimentGauge  from "./components/SentimentGauge";
 import SignalBreakdown from "./components/SignalBreakdown";
+import ExplanationPanel from "./components/ExplanationPanel";
+
 import {
   fetchPrediction, fetchPriceHistory,
   fetchSentimentHistory, fetchModelInfo, fetchTickers
@@ -127,6 +129,10 @@ export default function App() {
             prediction={prediction}
           />
           <SentimentGauge data={sentData} />
+          <ExplanationPanel
+            ticker={activeTicker}
+            prediction={prediction}
+          />
 
           {modelInfo && (
             <div style={styles.infoStrip}>

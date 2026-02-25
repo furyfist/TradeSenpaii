@@ -10,3 +10,4 @@ export const fetchPriceHistory     = (ticker) => api.get(`/price-history?ticker=
 export const fetchSentimentHistory = (ticker) => api.get(`/sentiment-history?ticker=${ticker}`);
 export const fetchModelInfo        = (ticker) => api.get(`/model-info?ticker=${ticker}`);
 export const fetchTickers          = ()       => api.get("/tickers");
+export const fetchExplanation = (ticker) => api.get(`/explain?ticker=${ticker}`);
