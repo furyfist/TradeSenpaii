@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 from models import (
     PredictionResponse, PriceHistoryResponse,

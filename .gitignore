@@ -17,3 +17,5 @@ Thumbs.db
 
 venv/
 stock-analysis/data/raw/sec_filings/
+app/backend/test_similarity.py
+app\backend\.env
