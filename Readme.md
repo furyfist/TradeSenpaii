@@ -1,172 +1,174 @@
+
 # TradeSenpai
+**AI-Powered Stock Research Tool**
 
-AI-Powered Stock Advisor for Coca-Cola (KO)
-
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.95%2B-green.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18%2B-blue.svg)](https://reactjs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Version 2.0 – Multi-Ticker + Agentic Explanations**  
+February 2026
 
 ## Overview
 
-TradeSenpai is an AI-powered stock research tool focused on Coca-Cola (KO) that combines historical stock price patterns and sentiment analysis from SEC regulatory filings to generate a next-day directional prediction (UP or DOWN). It addresses information asymmetry in retail investing by automating the analysis of SEC filings (8-K, 10-Q, 10-K), extracting financial sentiment using the Loughran-McDonald dictionary, and integrating it with technical indicators via a Transformer machine learning model.
+TradeSenpai is an AI-powered stock research tool that combines historical price pattern analysis with sentiment from SEC regulatory filings (8-K, 10-Q, 10-K) to generate next-day directional predictions (UP/DOWN) and **explainable research summaries** for retail investors.
 
-The system includes:
-- A Python data pipeline for fetching and processing data.
-- A trained Transformer model for predictions.
-- A FastAPI backend for serving predictions and data.
-- A React frontend dashboard for visualization.
+It automates the institutional analyst workflow: downloading SEC filings, extracting financial sentiment using the **Loughran-McDonald** dictionary, engineering technical indicators, and synthesizing insights with historical analogies + LLM explanations.
 
-This is not a "predict stock prices" tool—it's designed to surface signals (e.g., sentiment history, technical indicators) that institutional analysts use, automated for retail investors. The model achieves ~52.72% cross-validation accuracy on next-day direction, which is realistic for financial markets.
+**Key upgrade in V2**: Expanded from single-ticker (KO) to **six diversified tickers** (KO, JNJ, PG, WMT, AAPL, GOOGL) spanning consumer staples, healthcare, retail, and technology. Added an **agentic explanation layer** using cosine-similarity historical search + Groq/Llama 3.1 synthesis for plain-English narratives, key drivers, risks, and precedents.
+
+This is **not** a trading system or price predictor — it's an educational simulation tool that surfaces rarely-seen signals (sentiment shifts, technical patterns, historical context). Models achieve **51.9–53.5%** cross-validation accuracy on next-day direction — honest and realistic given market noise (academic short-term prediction ceiling ~55–56%).
+
+The real value lies in the **signal aggregation**, **sentiment history**, **historical analogies**, and **AI-generated explanations**.
 
 ## Features
 
-- **Next-Day Directional Prediction**: Binary classification (UP/DOWN) with confidence score.
-- **Signal Breakdown**: Displays key drivers like RSI, moving averages, volatility, and sentiment scores.
-- **Real-Time Data Integration**: Fetches live KO prices from Yahoo Finance and combines with historical SEC sentiment.
+- **Next-Day Directional Prediction** — Binary (UP/DOWN) with confidence score & tier (Low/Moderate/Strong/High Conviction)
+- **AI Explanation Panel** — Groq LLM synthesizes: headline, explanation, key driver, main risk, historical note
+- **Historical Similarity Search** — Top 3 most similar past trading days (cosine similarity on 38 features, ≥365 days old)
+- **Signal Breakdown** — Key drivers (RSI, MAs, volatility, LM sentiment, etc.) with color-coded states
+- **Real-Time Multi-Ticker Support** — Switch between 6 tickers; fetches live prices via yfinance
 - **Dashboard Visualizations**:
-  - 90-day price chart.
-  - Sentiment history gauge.
-  - Prediction card with metadata.
-- **Feature Set**: 56 engineered features including price indicators (e.g., MA7/20/50/200, RSI-14, Bollinger Bands), calendar features, Loughran-McDonald sentiment metrics (positive, negative, uncertainty, etc.), and interactions.
+  - 90-day price chart (Recharts)
+  - Sentiment history line chart
+  - Prediction card + confidence tier
+  - Expandable AI explanation with analogy cards (outcome, return %, similarity %, top signals)
+- **Feature Set** — ~56 features: price (lags, MAs, Bollinger, RSI, momentum), calendar, LM sentiment (pos/neg/uncertain/litigious/constraining + derived), interactions
 - **Data Sources**:
-  - Historical OHLCV from Yahoo Finance (1963–present).
-  - SEC EDGAR filings (1994–present) for sentiment.
+  - Historical & live OHLCV from Yahoo Finance
+  - SEC EDGAR filings (1993/1994–present) via sec-edgar-downloader
 
 ## Prerequisites
 
-- Python 3.8+
-- PostgreSQL database
-- Node.js 16+ and npm for the frontend
-- Libraries: Install via `requirements.txt` (assumed to include yfinance, sec-edgar-downloader, pandas, numpy, torch, fastapi, uvicorn, recharts, etc.)
-- Kaggle account (optional, for initial model training on GPU)
+- Python 3.10+
+- Node.js 18+ and npm (for frontend)
+- Libraries: See `requirements.txt` (yfinance, sec-edgar-downloader, pandas, torch, fastapi, etc.) and `frontend/package.json`
+- Groq API key (free tier) for explanations — set as `GROQ_API_KEY` env var
+- Kaggle account (optional, for GPU training)
 
 ## Installation
 
-1. **Clone the Repository**:
-   ```
+1. Clone the Repository
+
+   ```bash
    git clone https://github.com/yourusername/TradeSenpai.git
    cd TradeSenpai
    ```
 
-2. **Set Up Python Environment**:
-   ```
+2. Python Environment
+
+   ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate  # Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-3. **Set Up PostgreSQL**:
-   - Create a database (e.g., `tradesenpai_db`).
-   - Update connection strings in scripts (e.g., `data_loader.py`) with your credentials (hardcoded for now; consider env vars).
+3. Frontend Setup
 
-4. **Frontend Setup**:
-   ```
+   ```bash
    cd frontend
    npm install
    ```
 
-5. **Download and Process Data** (Initial Setup):
-   Run the data pipeline scripts in sequence:
-   ```
-   python scripts/fetch_stock_data.py
-   python scripts/data_loader.py
-   python scripts/fetch_sec_filings.py
-   python scripts/preprocess_filings.py
-   python scripts/lm_sentiment.py
-   python scripts/merge_datasets.py
-   ```
-   This generates `merged_dataset.csv` for training.
+4. Set Environment Variables
 
-6. **Train the Model** (Optional; pre-trained model available as `transformer_ko.pt`):
-   - Run the training notebook on Kaggle (with T4 GPU).
-   - Uses TimeSeriesSplit for cross-validation.
-   - Saves model to `models/transformer_ko.pt`.
+   Create `.env` in root or backend:
+
+   ```
+   GROQ_API_KEY=your_groq_key_here
+   ```
+
+5. Download & Process Data (per ticker)
+
+   ```bash
+   # Example for one ticker
+   python stock-analysis/scripts/fetch_stock_data.py --ticker KO
+   python stock-analysis/scripts/fetch_sec_filings.py --ticker KO
+   python stock-analysis/scripts/preprocess_filings.py --ticker KO
+   python stock-analysis/scripts/lm_sentiment.py --ticker KO
+   python stock-analysis/scripts/merge_datasets.py --ticker KO
+   ```
+
+   Repeat for JNJ, PG, WMT, AAPL, GOOGL (or script all via config).
+
+6. Train Models (optional — pre-trained in `models/`)
+
+   Run the Kaggle notebook (`training.ipynb`) — uses TimeSeriesSplit CV, saves one `.pt` per ticker.
 
 ## Usage
 
-1. **Run the Backend (FastAPI)**:
-   ```
+1. Run Backend (FastAPI)
+
+   ```bash
    cd backend
    uvicorn main:app --reload --port 8000
    ```
-   Endpoints:
-   - `/health`: Liveness check.
-   - `/predict`: Get latest prediction, confidence, and signal breakdown.
-   - `/price-history`: Last 90 days OHLCV.
-   - `/sentiment-history`: Last 50 sentiment points.
-   - `/model-info`: Model metadata.
 
-2. **Run the Frontend (React)**:
-   ```
+   Key endpoints:
+   - `/health`
+   - `/predict?ticker=KO`
+   - `/price-history?ticker=KO`
+   - `/sentiment-history?ticker=KO`
+   - `/explain?ticker=KO` (AI explanation)
+   - `/model-info?ticker=KO`
+
+2. Run Frontend (React/Vite)
+
+   ```bash
    cd frontend
    npm run dev
    ```
-   Open `http://localhost:5173` (Vite default). The dashboard fetches data from the backend and displays predictions, charts, and signals.
 
-3. **Generating a Prediction**:
-   - The backend fetches real-time data on `/predict`.
-   - Example output: "DOWN with 70.3% confidence" (as of Feb 21, 2026 sample).
+   Open http://localhost:5173  
+   Select ticker → view prediction, charts, signals → expand AI Explanation.
 
 ## System Architecture
 
-### Data Pipeline
-Six sequential Python scripts:
-- `fetch_stock_data.py`: Downloads OHLCV from yfinance.
-- `data_loader.py`: Loads to PostgreSQL.
-- `fetch_sec_filings.py`: Downloads SEC filings via sec-edgar-downloader.
-- `preprocess_filings.py`: Extracts relevant text (MD&A, item bodies).
-- `lm_sentiment.py`: Computes sentiment using Loughran-McDonald.
-- `merge_datasets.py`: Joins datasets, engineers features.
+- **Data Pipeline** — Parameterized scripts using `config.py` (CIKs, paths, metadata)
+- **Models** — 6 separate Transformers (d_model=128, 4 heads, 3 layers, 60-day lookback)
+- **Backend** — FastAPI with per-ticker routing, caching, yfinance + torch inference
+- **Frontend** — React/Vite + Recharts; ticker selector, lazy-loaded explanation panel
+- **Explanation Layer** — Cosine similarity (numpy) + Groq Llama 3.1 8B (JSON-structured output)
 
-### Model
-- Transformer (d_model=128, 4 heads, 3 layers, 60-day lookback).
-- Trained on 8,073 samples (1994–Jan 2026).
-- Binary classification; 52.72% CV accuracy.
+## V2 Training Results
 
-### Backend
-- FastAPI on port 8000 with caching.
+Cross-validation accuracy (no leakage):
+- KO: 52.29% ± 0.0067
+- JNJ: 51.97% ± 0.0110
+- PG: 51.92% ± 0.0131
+- WMT: 53.33% ± 0.0147
+- AAPL: 52.40% ± 0.0076
+- GOOGL: 53.48% ± 0.0122
 
-### Frontend
-- React/Vite with Recharts for charts.
-- Two-column dashboard: Prediction + signals (left), charts (right).
+All beat majority baseline; best in defensive & tech sectors.
 
 ## Known Limitations
 
-- Single stock (KO only); no generalization.
-- 52.72% accuracy—marginally above 51.17% baseline due to market noise.
-- Sentiment forward-filled between filings (assumes persistence).
-- No earnings calendar awareness.
-- Excludes macro features (e.g., VIX, S&P500).
-- Relies on yfinance (rate limits, no SLA).
-- No prediction logging for live tracking.
-- Local deployment only; single-user.
+- ~52% accuracy ceiling — honest for next-day direction
+- Forward-filled sentiment between filings
+- No earnings calendar / macro features (VIX, SPX, rates)
+- yfinance dependency (no SLA, occasional gaps)
+- Local-only deployment
+- No live prediction logging / real-world tracking
+- Desktop-focused UI (not mobile-responsive)
 
-## Technical Debt
+## Technical Debt & Future Ideas
 
-- Inline CSS in React (no framework).
-- No tests (unit/integration).
-- Hardcoded paths and credentials.
-- Brittle regex in preprocessing.
-- Model reloaded on every restart.
-- Partial LM dictionary (full has 86k+ words).
-- No env variable management.
+- Inline CSS → migrate to Tailwind / styled-components
+- No tests → add pytest + vitest
+- Hardcoded paths → use pathlib + env vars fully
+- Partial LM dictionary → use full 86k+ version
+- Add earnings flag, macro features, 5-day target
+- Optional: PostgreSQL logging, cloud deploy
 
-## Lessons Learned
+## Lessons from V1 → V2
 
-- Domain-specific tools (e.g., Loughran-McDonald) beat general models for specific data.
-- Inspect data before modeling to avoid mismatches.
-- Ensure training-inference consistency to prevent skew.
-- Scope ruthlessly for V1 to ship a complete product.
-- 52% accuracy is honest and shippable—focus on signal value.
-- Positioning: Frame as "automated analyst" not "price predictor."
+- One `config.py` prevents hundreds of bugs
+- Domain tools (LM) > general neural models for filings
+- Explanation layer > raw prediction in value
+- Migrate & verify baseline before expanding scope
+- Cosine similarity on features gives surprisingly good historical analogies
 
-## Contributing
+Contributions welcome — focus on debt reduction, new tickers, or macro features.
 
-Contributions welcome! Fork the repo, create a branch, and submit a PR. Focus on fixes for technical debt or limitations.
+**License**  
+MIT — see LICENSE
 
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
-
-Version 1.0 - February 2026
+**Version 2.0 — February 2026**  
+From single-ticker foundation to multi-ticker explainable research tool.
