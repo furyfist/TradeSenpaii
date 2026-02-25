@@ -56,4 +56,4 @@ class ExplanationResponse(BaseModel):
     main_risk:        str
     historical_note:  str
     confidence_tier:  str
-    analogies:        list[dict]
+    analogies:        list[dict]   # each analogy includes search_context + search_url
