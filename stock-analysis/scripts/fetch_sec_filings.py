@@ -1,16 +1,22 @@
-import os 
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
+from config import TICKERS, FILING_TYPES, raw_dir, filings_index_path
 import re
 import pandas as pd
-from pathlib import Path
 from sec_edgar_downloader import Downloader
 
-# Config
-COMPANY_NAME    = "TradeSenapi"
-EMAIL           = "tradesenpai@email.com"       # EDGAR requires this — replace it
-TICKER          = "KO"
-FILING_TYPES    = ["8-K", "10-Q", "10-K"]
-DOWNLOAD_DIR    = Path("data/raw/sec_filings")
-INDEX_CSV       = DOWNLOAD_DIR / "filings_index.csv"
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--ticker", required=True, choices=list(TICKERS.keys()))
+args = parser.parse_args()
+
+TICKER       = args.ticker
+CIK          = TICKERS[TICKER]["cik"]
+COMPANY_NAME = TICKERS[TICKER]["name"]   # ← must be AFTER args.ticker is defined
+DOWNLOAD_DIR = raw_dir(TICKER)
+INDEX_CSV    = filings_index_path(TICKER)
+EMAIL        = "tradesenpai@email.com"
 
 # Download all the filings
 def download_all_filings():
@@ -127,7 +133,7 @@ if __name__ == "__main__":
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     # Step 1 — Download
-    # download_all_filings()
+    download_all_filings()
 
     # Step 2 — Build index
     df = build_filings_index()

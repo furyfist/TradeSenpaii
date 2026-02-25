@@ -1,11 +1,18 @@
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent))
+from config import cleaned_prices_path, sentiment_features_path, merged_dataset_path
 import pandas as pd
 import numpy as np
-from pathlib import Path
 
-# CONFIG
-PRICE_CSV     = Path("data/processed/features_dataset.csv")
-SENTIMENT_CSV = Path("data/processed/sec_sentiment_features.csv")
-OUTPUT_CSV    = Path("data/processed/merged_dataset.csv")
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--ticker", required=True)
+args = parser.parse_args()
+
+PRICE_CSV     = cleaned_prices_path(args.ticker)
+SENTIMENT_CSV = sentiment_features_path(args.ticker)
+OUTPUT_CSV    = merged_dataset_path(args.ticker)
 
 # LOAD
 def load_data():

@@ -1,16 +1,18 @@
 from pydantic import BaseModel
-from typing import Optional
+
+SUPPORTED_TICKERS = ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]
 
 class PredictionResponse(BaseModel):
-    ticker:             str
-    prediction:         str        # "UP" or "DOWN"
-    confidence:         float      # 0.0 to 1.0
-    predicted_date:     str        # date being predicted
-    as_of_date:         str        # last known trading day
-    top_signals:        list[dict] # feature name + value + direction
-    sentiment_score:    float
-    sentiment_label:    str
-    model_accuracy:     float
+    ticker:          str
+    name:            str
+    prediction:      str
+    confidence:      float
+    predicted_date:  str
+    as_of_date:      str
+    top_signals:     list[dict]
+    sentiment_score: float
+    sentiment_label: str
+    model_accuracy:  float
 
 class PricePoint(BaseModel):
     date:   str
@@ -25,21 +27,33 @@ class PriceHistoryResponse(BaseModel):
     data:   list[PricePoint]
 
 class SentimentPoint(BaseModel):
-    date:              str
+    date:               str
     lm_sentiment_score: float
-    lm_neg_pct:        float
-    lm_uncertain_pct:  float
-    form_type:         str
+    lm_neg_pct:         float
+    lm_uncertain_pct:   float
+    form_type:          str
 
 class SentimentHistoryResponse(BaseModel):
     ticker: str
     data:   list[SentimentPoint]
 
 class ModelInfoResponse(BaseModel):
-    ticker:          str
-    cv_accuracy:     float
-    trained_on:      str
-    input_features:  int
-    sequence_len:    int
-    model_type:      str
-    last_updated:    str
+    ticker:         str
+    name:           str
+    sector:         str
+    cv_accuracy:    float
+    trained_on:     str
+    input_features: int
+    sequence_len:   int
+    model_type:     str
+    last_updated:   str
+
+class ExplanationResponse(BaseModel):
+    ticker:           str
+    headline:         str
+    explanation:      str
+    key_driver:       str
+    main_risk:        str
+    historical_note:  str
+    confidence_tier:  str
+    analogies:        list[dict]   # each analogy includes search_context + search_url

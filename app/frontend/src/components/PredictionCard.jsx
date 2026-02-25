@@ -27,8 +27,8 @@ export default function PredictionCard({ prediction, loading, onRefresh }) {
       {/* Header */}
       <div style={styles.header}>
         <div>
-          <span style={styles.ticker}>KO</span>
-          <span style={styles.company}>Coca-Cola Co.</span>
+          <span style={styles.ticker}>{prediction.ticker}</span>
+          <span style={styles.company}>{prediction.name}</span>
         </div>
         <button style={styles.refreshBtn} onClick={onRefresh}>
           <RefreshCw size={16} />

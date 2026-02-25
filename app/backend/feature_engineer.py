@@ -7,23 +7,25 @@ from sentiment_loader import load_latest_sentiment
 
 import time
 
-def fetch_recent_prices(ticker: str = "KO", days: int = 500) -> pd.DataFrame:
+def fetch_recent_prices(ticker: str = "KO", days: int = 800) -> pd.DataFrame:
     end   = datetime.today()
     start = end - timedelta(days=days)
-    
-    for attempt in range(3):       # retry up to 3 times
+
+    for attempt in range(3):
         df = yf.download(ticker, start=start, end=end, progress=False)
+        print(f"[DEBUG] yfinance returned {len(df)} rows for {ticker}")
         if len(df) > 0:
             break
         print(f"[WARN] yfinance returned empty data, retry {attempt+1}/3...")
         time.sleep(2)
-    
+
     df = df.reset_index()
     df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower()
                   for c in df.columns]
     df = df.rename(columns={"price": "close"}) if "price" in df.columns else df
     df = df[["date", "open", "high", "low", "close", "volume"]].copy()
     df = df.dropna().reset_index(drop=True)
+    print(f"[DEBUG] fetch_recent_prices returning {len(df)} rows for {ticker}")
     return df
 
 
@@ -117,19 +119,19 @@ def engineer_features(df: pd.DataFrame, sentiment: dict) -> pd.DataFrame:
     return df
 
 
-def get_latest_feature_row(ticker: str = "KO") -> tuple[pd.DataFrame, dict]:
+def get_latest_feature_row(ticker: str) -> tuple[pd.DataFrame, dict]:
     """
     Full pipeline: fetch prices → engineer features → return
     last row ready for model inference.
     Returns (feature_df, raw_price_df)
     """
-    print("[INFO] Fetching latest KO prices...")
+    print(f"[INFO] Fetching latest {ticker} prices...")
     price_df   = fetch_recent_prices(ticker, days=500)
 
-    print("[INFO] Loading latest sentiment...")
-    sentiment  = load_latest_sentiment()
+    print(f"[INFO] Loading latest {ticker} sentiment...")
+    sentiment  = load_latest_sentiment(ticker)
 
-    print("[INFO] Engineering features...")
+    print(f"[INFO] Engineering features for {ticker}...")
     feature_df = engineer_features(price_df, sentiment)
 
     return feature_df, price_df
