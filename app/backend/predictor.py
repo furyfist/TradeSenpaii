@@ -75,7 +75,7 @@ class Predictor:
             raise FileNotFoundError(f"No model found for {ticker} at {model_path}")
 
         print(f"[INFO] Loading model for {ticker}...")
-        checkpoint = torch.load(model_path, map_location="cpu")
+        checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
 
         cfg   = checkpoint["model_config"]
         model = StockTransformer(

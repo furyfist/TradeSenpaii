@@ -127,7 +127,7 @@ def get_latest_feature_row(ticker: str = "KO") -> tuple[pd.DataFrame, dict]:
     price_df   = fetch_recent_prices(ticker, days=500)
 
     print("[INFO] Loading latest sentiment...")
-    sentiment  = load_latest_sentiment()
+    sentiment  = load_latest_sentiment(ticker)
 
     print("[INFO] Engineering features...")
     feature_df = engineer_features(price_df, sentiment)
