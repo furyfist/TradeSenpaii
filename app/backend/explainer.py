@@ -4,6 +4,9 @@ import time
 import pandas as pd
 from groq import Groq
 from similarity_search import find_similar_days, format_analogies_for_llm
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Config
 GROQ_API_KEY    = os.getenv("GROQ_API_KEY")

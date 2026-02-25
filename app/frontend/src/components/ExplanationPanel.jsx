@@ -8,6 +8,15 @@ export default function ExplanationPanel({ ticker, prediction }) {
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
+  // Reset state when ticker changes
+  useEffect(() => {
+    setExplanation(null);
+    setError(null);
+    setLoading(false);
+    setExpanded(false);   // collapse the panel on ticker switch
+  }, [ticker]);
+
+  // Load explanation when expanded
   useEffect(() => {
     if (!ticker || !prediction) return;
     if (!expanded) return;
