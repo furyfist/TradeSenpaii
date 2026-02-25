@@ -42,24 +42,29 @@ export default function App() {
     setLoading(true);
     setError(null);
     setPrediction(null);
+
     try {
-      const [predRes, priceRes, sentRes, modelRes] = await Promise.all([
-        fetchPrediction(ticker),
-        fetchPriceHistory(ticker),
-        fetchSentimentHistory(ticker),
-        fetchModelInfo(ticker),
-      ]);
-      setPrediction(predRes.data);
-      setPriceData(priceRes.data.data);
-      setSentData(sentRes.data.data);
-      setModelInfo(modelRes.data);
-      setLastUpdated(new Date().toLocaleTimeString());
+        // Load fast endpoints first — show chart immediately
+        const [priceRes, sentRes, modelRes] = await Promise.all([
+            fetchPriceHistory(ticker),
+            fetchSentimentHistory(ticker),
+            fetchModelInfo(ticker),
+        ]);
+        setPriceData(priceRes.data.data);
+        setSentData(sentRes.data.data);
+        setModelInfo(modelRes.data);
+        setLoading(false);  // ← unblock UI here
+
+        // Load prediction separately — slower
+        const predRes = await fetchPrediction(ticker);
+        setPrediction(predRes.data);
+        setLastUpdated(new Date().toLocaleTimeString());
+
     } catch (err) {
-      setError("Failed to fetch data. Is the backend running?");
-    } finally {
-      setLoading(false);
+        setError("Failed to fetch data. Is the backend running?");
+        setLoading(false);
     }
-  };
+};
 
   return (
     <div style={styles.root}>
