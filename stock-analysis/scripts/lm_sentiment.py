@@ -1,10 +1,18 @@
-import re
-import pandas as pd
+import sys
 from pathlib import Path
+import pandas as pd
+import re
 
-# CONFIG
-INPUT_CSV  = Path("data/processed/sec_sentiment_input.csv")
-OUTPUT_CSV = Path("data/processed/sec_sentiment_features.csv")
+sys.path.append(str(Path(__file__).parent))
+from config import sentiment_input_path, sentiment_features_path
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--ticker", required=True)
+args = parser.parse_args()
+
+INPUT_CSV  = sentiment_input_path(args.ticker)
+OUTPUT_CSV = sentiment_features_path(args.ticker)
 
 # LOUGHRAN-McDONALD DICTIONARY
 # Source: https://sraf.nd.edu/loughranmcdonald-master-dictionary/

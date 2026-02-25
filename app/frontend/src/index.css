@@ -23,3 +23,8 @@ body {
   background: #2d2d3d;
   border-radius: 3px;
 }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

@@ -2,14 +2,15 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-SENTIMENT_CSV = Path("../../stock-analysis/data/processed/sec_sentiment_features.csv")
+# Base path — points to stock-analysis/data/processed/
+BASE_PATH = Path("../../stock-analysis/data/processed")
 
 
-def load_latest_sentiment() -> dict:
-    df = pd.read_csv(SENTIMENT_CSV, parse_dates=["date"])
-    df = df.sort_values("date").reset_index(drop=True)
+def _get_sentiment_csv(ticker: str) -> Path:
+    return BASE_PATH / ticker / "sec_sentiment_features.csv"
 
-    # Compute derived columns that were created in merge_datasets.py
+
+def _compute_derived(df: pd.DataFrame) -> pd.DataFrame:
     df["lm_sentiment_ma5"]      = df["lm_sentiment_score"].rolling(5,  min_periods=1).mean()
     df["lm_sentiment_ma20"]     = df["lm_sentiment_score"].rolling(20, min_periods=1).mean()
     df["lm_sentiment_delta"]    = df["lm_sentiment_score"] - df["lm_sentiment_ma20"]
@@ -19,7 +20,13 @@ def load_latest_sentiment() -> dict:
     lit_mean = df["lm_litigious"].rolling(20, min_periods=1).mean()
     df["lm_litigation_spike"]   = (df["lm_litigious"] > lit_mean * 1.5).astype(int)
     df["lm_neg_dominant"]       = (df["lm_neg_pct"] > df["lm_pos_pct"]).astype(int)
+    return df
 
+
+def load_latest_sentiment(ticker: str) -> dict:
+    df = pd.read_csv(_get_sentiment_csv(ticker), parse_dates=["date"])
+    df = df.sort_values("date").reset_index(drop=True)
+    df = _compute_derived(df)
     latest = df.iloc[-1]
 
     return {
@@ -43,8 +50,8 @@ def load_latest_sentiment() -> dict:
     }
 
 
-def load_sentiment_history(n: int = 50) -> list[dict]:
-    df = pd.read_csv(SENTIMENT_CSV, parse_dates=["date"])
+def load_sentiment_history(ticker: str, n: int = 50) -> list[dict]:
+    df = pd.read_csv(_get_sentiment_csv(ticker), parse_dates=["date"])
     df = df.sort_values("date").tail(n).reset_index(drop=True)
 
     return [
