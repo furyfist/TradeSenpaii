@@ -11,7 +11,8 @@ load_dotenv()
 from models import (
     PredictionResponse, PriceHistoryResponse,
     SentimentHistoryResponse, ModelInfoResponse,
-    PricePoint, SentimentPoint, SUPPORTED_TICKERS
+    PricePoint, SentimentPoint, SUPPORTED_TICKERS,
+    ExplanationResponse
 )
 from predictor import Predictor
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
@@ -203,7 +204,7 @@ def explain(ticker: str = Query(default="KO")):
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
-        
+
 @app.get("/tickers")
 def get_tickers():
     return {
