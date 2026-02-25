@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+from explainer import explain_prediction
 import os
 load_dotenv()
 
@@ -166,6 +167,43 @@ def model_info(ticker: str = Query(default="KO")):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/explain", response_model=ExplanationResponse)
+def explain(ticker: str = Query(default="KO")):
+    ticker = validate_ticker(ticker)
+    try:
+        feature_df, price_df  = get_latest_feature_row(ticker)
+        result                = predictor.predict(ticker, feature_df)
+        sentiment             = load_latest_sentiment(ticker)
+        current_features      = feature_df.iloc[-1]
+
+        explanation = explain_prediction(
+            ticker           = ticker,
+            prediction       = result["prediction"],
+            confidence       = result["confidence"],
+            top_signals      = result["top_signals"],
+            sentiment_score  = sentiment["lm_sentiment_score"],
+            sentiment_label  = "Positive" if sentiment["lm_sentiment_score"] > 0.5
+                               else ("Negative" if sentiment["lm_sentiment_score"] < -0.5
+                               else "Neutral"),
+            current_features = current_features,
+        )
+
+        return ExplanationResponse(
+            ticker          = ticker,
+            headline        = explanation["headline"],
+            explanation     = explanation["explanation"],
+            key_driver      = explanation["key_driver"],
+            main_risk       = explanation["main_risk"],
+            historical_note = explanation["historical_note"],
+            confidence_tier = explanation["confidence_tier"],
+            analogies       = explanation["analogies"],
+        )
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+        
 @app.get("/tickers")
 def get_tickers():
     return {

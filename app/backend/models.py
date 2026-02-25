@@ -47,3 +47,13 @@ class ModelInfoResponse(BaseModel):
     sequence_len:   int
     model_type:     str
     last_updated:   str
+
+class ExplanationResponse(BaseModel):
+    ticker:           str
+    headline:         str
+    explanation:      str
+    key_driver:       str
+    main_risk:        str
+    historical_note:  str
+    confidence_tier:  str
+    analogies:        list[dict]
