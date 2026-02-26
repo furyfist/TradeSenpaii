@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API = "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL;
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 export default function AdminPanel() {
