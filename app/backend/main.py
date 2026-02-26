@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
@@ -70,6 +73,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TradeSenpai API v2", version="2.0.0", lifespan=lifespan)
 
 predictor = Predictor()
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 security = HTTPBasic()
 
@@ -243,7 +250,8 @@ def model_info(ticker: str = Query(default="KO")):
 
 
 @app.get("/explain", response_model=ExplanationResponse)
-def explain(ticker: str = Query(default="KO")):
+@limiter.limit("10/minute")
+def explain(request: Request, ticker: str = Query(default="KO")):
     ticker = validate_ticker(ticker)
     try:
         feature_df, price_df  = get_latest_feature_row(ticker)
@@ -316,12 +324,13 @@ def hypothesis(request: HypothesisRequest):
     except Exception as e:
         import traceback
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 # ── Subscriber Endpoints 
 
 @app.post("/subscribe")
-def subscribe(body: dict):
+@limiter.limit("3/minute")
+def subscribe(request: Request, body: dict):
     """
     User submits Telegram username + optionally their chat ID.
     If chat ID provided → auto-approved immediately + welcome message sent.
@@ -423,8 +432,9 @@ def reject(sub_id: int, admin: str = Depends(verify_admin)):
 
 
 @app.post("/hypothesis/stream")
-def hypothesis_stream(request: HypothesisRequest):
-    text = request.text.strip()
+@limiter.limit("5/minute")
+def hypothesis_stream(request: Request, body: HypothesisRequest):
+    text = body.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Empty hypothesis.")
 
@@ -489,7 +499,7 @@ def hypothesis_stream(request: HypothesisRequest):
         except Exception as e:
             import traceback
             print(traceback.format_exc())
-            yield f"data: {json.dumps({'step': 0, 'status': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'step': 0, 'status': 'error', 'message': 'Analysis failed. Please try again.'})}\n\n"
 
     return StreamingResponse(
         event_stream(),
