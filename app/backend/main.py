@@ -261,3 +261,4 @@ def get_tickers():
             for t in SUPPORTED_TICKERS
         ]
     }
+    
