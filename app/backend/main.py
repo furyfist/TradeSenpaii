@@ -317,15 +317,45 @@ def hypothesis(request: HypothesisRequest):
 @app.post("/subscribe")
 def subscribe(body: dict):
     """
-    Any user can submit their Telegram username to request alerts.
-    Admin must approve before they receive messages.
+    User submits Telegram username + optionally their chat ID.
+    If chat ID provided → auto-approved immediately + welcome message sent.
+    Otherwise → pending admin approval.
     """
     username = body.get("username", "").strip().lstrip("@")
     if not username:
         raise HTTPException(status_code=400, detail="Username cannot be empty.")
     if len(username) > 50:
         raise HTTPException(status_code=400, detail="Username too long.")
-    result = add_subscriber(username)
+
+    telegram_id = body.get("telegram_id", "").strip() or None
+
+    result = add_subscriber(username, telegram_id)
+
+    # Send welcome message immediately on auto-approve
+    if result.get("status") == "approved" and telegram_id:
+        try:
+            import asyncio
+            from telegram import Bot
+            token = os.getenv("TELEGRAM_BOT_TOKEN")
+            async def _welcome():
+                bot = Bot(token=token)
+                await bot.send_message(
+                    chat_id    = telegram_id,
+                    text       = (
+                        "🤖 <b>TradeSenpai Alerts — You're in!</b>\n\n"
+                        "You'll now receive:\n"
+                        "• 🌅 Morning brief (9:30 AM ET)\n"
+                        "• 🌆 Evening outcomes (4:15 PM ET)\n"
+                        "• 🔄 Direction flip alerts\n"
+                        "• 📄 Sentiment spike alerts\n\n"
+                        "⚠️ <i>Educational simulation only. Not financial advice.</i>"
+                    ),
+                    parse_mode = "HTML",
+                )
+            asyncio.run(_welcome())
+        except Exception as e:
+            print(f"[WARN] Welcome message failed: {e}")
+
     return result
 
 

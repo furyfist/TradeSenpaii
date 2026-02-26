@@ -98,7 +98,7 @@ export default function App() {
           />
         } />
         <Route path="/hypothesis" element={<HypothesisPage />} />
-        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/ts-ops-7x9k" element={<AdminPanel />} />
       </Routes>
     </div>
   );
