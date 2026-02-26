@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from explainer import explain_prediction
 from alerts.scheduler import create_scheduler
+from alerts.bot_listener import create_bot_app
+import threading
 
 import os
 load_dotenv()
@@ -33,7 +35,7 @@ from hypothesis.synthesizer       import synthesize, TICKER_FULL_NAME
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Preload all models on startup so first request is fast
+    # Preload models
     print("[STARTUP] Preloading all ticker models...")
     for ticker in SUPPORTED_TICKERS:
         try:
@@ -41,7 +43,26 @@ async def lifespan(app: FastAPI):
             print(f"[STARTUP] {ticker} model ready")
         except Exception as e:
             print(f"[STARTUP] Could not load {ticker}: {e}")
+
+    # Start alert scheduler
+    scheduler = create_scheduler()
+    scheduler.start()
+    print("[STARTUP] Alert scheduler started")
+
+    # Start bot listener in background thread
+    def run_bot():
+        import asyncio
+        bot_app = create_bot_app()
+        asyncio.run(bot_app.run_polling())
+
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+    print("[STARTUP] Bot listener started")
+
     yield
+
+    scheduler.shutdown(wait=False)
+    print("[SHUTDOWN] Scheduler stopped")
 
 app = FastAPI(title="TradeSenpai API v2", version="2.0.0", lifespan=lifespan)
 
