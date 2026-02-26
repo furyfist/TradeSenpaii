@@ -28,6 +28,7 @@ def init_db():
         """)
         con.commit()
     init_subscribers_table()
+    init_predictions_table()
     print("[INFO][alert_store] DB initialized at", DB_PATH)
 
 
@@ -295,7 +296,7 @@ def get_accuracy_stats() -> dict:
             "accuracy": round((correct / total * 100) if total > 0 else 0, 1),
         }
     return stats
-    
+
 if __name__ == "__main__":
     init_db()
     print("already_sent test:", already_sent("test_key"))

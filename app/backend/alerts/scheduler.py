@@ -1,4 +1,7 @@
 import sys, os
+import yfinance as yf
+from alerts.alert_store import get_accuracy_stats
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -50,37 +53,26 @@ def job_morning_brief():
 
 
 def job_evening_brief():
-    """4:15 PM ET — actual outcomes vs predictions."""
+    """4:15 PM ET — actual outcomes vs predictions from DB."""
     print(f"[INFO][scheduler] Running evening brief job")
     key = f"evening_{datetime.now().strftime('%Y%m%d')}"
     if already_sent(key, cooldown_hours=20):
         return
 
-    import yfinance as yf
-    outcomes = []
-    for ticker, pred in _last_predictions.items():
-        try:
-            hist = yf.Ticker(ticker).history(period="2d")
-            if len(hist) >= 2:
-                ret = (hist["Close"].iloc[-1] - hist["Close"].iloc[-2]) / hist["Close"].iloc[-2] * 100
-                actual = "UP" if ret > 0 else "DOWN"
-                correct = pred == actual
-                if correct:
-                    _accuracy_tracker["correct"] += 1
-                _accuracy_tracker["total"] += 1
-                outcomes.append({
-                    "ticker":           ticker,
-                    "prediction":       pred,
-                    "actual_direction": actual,
-                    "actual_return":    round(ret, 2),
-                })
-        except Exception as e:
-            print(f"[ERROR][scheduler] Evening brief {ticker}: {e}")
+    from alerts.alert_store import fill_actual_outcomes, get_accuracy_stats
+    outcomes = fill_actual_outcomes()
+    stats    = get_accuracy_stats()
+
+    total   = sum(s["total"]   for s in stats.values())
+    correct = sum(s["correct"] for s in stats.values())
+    accuracy_tracker = {"total": total, "correct": correct}
 
     if outcomes:
-        msg = fmt_evening_brief(outcomes, _accuracy_tracker)
+        msg = fmt_evening_brief(outcomes, accuracy_tracker)
         send_message(msg)
         mark_sent(key, "evening_brief")
+    else:
+        print(f"[INFO][scheduler] No outcomes to report yet")
 
 
 def job_weekly_digest():
@@ -91,10 +83,12 @@ def job_weekly_digest():
         return
 
     # Simple weekly stats from accuracy tracker
-    weekly_stats = {
-        ticker: {"accuracy": 52.0, "total": 5}
-        for ticker in SUPPORTED_TICKERS
-    }
+    weekly_stats = get_accuracy_stats()
+
+    if not weekly_stats:
+        print("[WARN][scheduler] No accuracy data yet, skipping weekly digest")
+        return
+
     msg = fmt_weekly_digest(weekly_stats)
     send_message(msg)
     mark_sent(key, "weekly_digest")

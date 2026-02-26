@@ -146,6 +146,19 @@ def predict(ticker: str = Query(default="KO")):
         )
 
         _cache[ticker] = {"prediction": response, "timestamp": now}
+
+        # Log prediction to history (skip if cached — already logged)
+        try:
+            from alerts.alert_store import log_prediction
+            log_prediction(
+                ticker         = ticker,
+                predicted_date = str(next_day.date()),
+                prediction     = result["prediction"],
+                confidence     = result["confidence"],
+            )
+        except Exception as e:
+            print(f"[WARN] Could not log prediction for {ticker}: {e}")
+
         return response
 
     except Exception as e:
