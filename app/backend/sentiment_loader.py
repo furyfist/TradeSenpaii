@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-# Base path — points to stock-analysis/data/processed/
-BASE_PATH = Path("../../stock-analysis/data/processed")
+# Base path 
+BASE_PATH = Path(__file__).resolve().parent.parent.parent / "stock-analysis" / "data" / "processed"
 
 
 def _get_sentiment_csv(ticker: str) -> Path:
