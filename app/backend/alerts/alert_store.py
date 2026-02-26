@@ -173,6 +173,129 @@ def get_approved_chat_ids() -> list[str]:
         ).fetchall()
     return [r[0] for r in rows]
 
+def init_predictions_table():
+    """Create prediction_history table if not exists."""
+    with _conn() as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS prediction_history (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker          TEXT NOT NULL,
+                predicted_date  TEXT NOT NULL,
+                prediction      TEXT NOT NULL,
+                confidence      REAL NOT NULL,
+                actual_direction TEXT,
+                actual_return    REAL,
+                correct          INTEGER,
+                logged_at        TEXT NOT NULL
+            )
+        """)
+        con.commit()
+
+
+def log_prediction(ticker: str, predicted_date: str, prediction: str, confidence: float):
+    """Log a new prediction. Outcome filled in next day by scheduler."""
+    init_predictions_table()
+    with _conn() as con:
+        # Avoid duplicate for same ticker + date
+        existing = con.execute(
+            "SELECT id FROM prediction_history WHERE ticker=? AND predicted_date=?",
+            (ticker, predicted_date)
+        ).fetchone()
+        if existing:
+            return
+        con.execute(
+            """INSERT INTO prediction_history
+               (ticker, predicted_date, prediction, confidence, logged_at)
+               VALUES (?,?,?,?,?)""",
+            (ticker, predicted_date, prediction, confidence, datetime.now().isoformat())
+        )
+        con.commit()
+    print(f"[INFO][alert_store] Logged prediction: {ticker} {prediction} for {predicted_date}")
+
+
+def fill_actual_outcomes():
+    """
+    Called by evening scheduler job.
+    Finds predictions with no actual_direction yet,
+    fetches real price movement, marks correct/incorrect.
+    Returns list of outcome dicts for the evening brief.
+    """
+    import yfinance as yf
+    init_predictions_table()
+
+    with _conn() as con:
+        rows = con.execute(
+            """SELECT id, ticker, predicted_date, prediction
+               FROM prediction_history
+               WHERE actual_direction IS NULL
+               AND predicted_date <= date('now')""",
+        ).fetchall()
+
+    outcomes = []
+    for row in rows:
+        pred_id, ticker, predicted_date, prediction = row
+        try:
+            hist = yf.Ticker(ticker).history(period="5d")
+            if len(hist) < 2:
+                continue
+
+            actual_return    = float(
+                (hist["Close"].iloc[-1] - hist["Close"].iloc[-2])
+                / hist["Close"].iloc[-2] * 100
+            )
+            actual_direction = "UP" if actual_return > 0 else "DOWN"
+            correct          = 1 if prediction == actual_direction else 0
+
+            with _conn() as con:
+                con.execute(
+                    """UPDATE prediction_history
+                       SET actual_direction=?, actual_return=?, correct=?
+                       WHERE id=?""",
+                    (actual_direction, round(actual_return, 4), correct, pred_id)
+                )
+                con.commit()
+
+            outcomes.append({
+                "ticker":           ticker,
+                "prediction":       prediction,
+                "actual_direction": actual_direction,
+                "actual_return":    round(actual_return, 2),
+                "correct":          bool(correct),
+            })
+            print(f"[INFO][alert_store] Outcome filled: {ticker} predicted={prediction} actual={actual_direction} correct={bool(correct)}")
+
+        except Exception as e:
+            print(f"[ERROR][alert_store] fill_actual_outcomes {ticker}: {e}")
+
+    return outcomes
+
+
+def get_accuracy_stats() -> dict:
+    """
+    Returns real accuracy stats from prediction_history.
+    Used by evening brief and weekly digest.
+    """
+    init_predictions_table()
+    with _conn() as con:
+        rows = con.execute(
+            """SELECT ticker,
+                      COUNT(*) as total,
+                      SUM(correct) as correct
+               FROM prediction_history
+               WHERE correct IS NOT NULL
+               GROUP BY ticker"""
+        ).fetchall()
+
+    stats = {}
+    for row in rows:
+        ticker, total, correct = row
+        stats[ticker] = {
+            "total":    total,
+            "correct":  correct,
+            "accuracy": round((correct / total * 100) if total > 0 else 0, 1),
+        }
+    return stats
+    
 if __name__ == "__main__":
     init_db()
     print("already_sent test:", already_sent("test_key"))
