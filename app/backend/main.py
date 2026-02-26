@@ -12,12 +12,17 @@ from models import (
     PredictionResponse, PriceHistoryResponse,
     SentimentHistoryResponse, ModelInfoResponse,
     PricePoint, SentimentPoint, SUPPORTED_TICKERS,
-    ExplanationResponse
+    ExplanationResponse,HypothesisRequest, HypothesisResponse
 )
 from predictor import Predictor
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
 from sentiment_loader import load_sentiment_history, load_latest_sentiment
-
+from hypothesis.hypothesis_parser import parse_hypothesis
+from hypothesis.market_collector  import collect_market_context
+from hypothesis.evidence_agent    import collect_historical_evidence
+from hypothesis.bear_agent        import collect_bear_case
+from hypothesis.bull_agent        import collect_bull_case
+from hypothesis.synthesizer       import synthesize, TICKER_FULL_NAME
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -199,6 +204,46 @@ def explain(ticker: str = Query(default="KO")):
             confidence_tier = explanation["confidence_tier"],
             analogies       = explanation["analogies"],
         )
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/hypothesis")
+def hypothesis(request: HypothesisRequest):
+    text = request.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Hypothesis text cannot be empty.")
+
+    try:
+        # Agent 1 — Parse
+        parsed = parse_hypothesis(text)
+        if parsed.get("error"):
+            raise HTTPException(status_code=400, detail=parsed["error"])
+
+        ticker = parsed["ticker"]
+        company_name = TICKER_FULL_NAME.get(ticker, ticker)
+
+        # Agents 2-5 run in sequence
+        market   = collect_market_context(ticker)
+        evidence = collect_historical_evidence(
+            ticker,
+            parsed.get("implied_return_pct"),
+            parsed.get("timeframe_days", 90),
+        )
+        bear = collect_bear_case(ticker, company_name)
+        bull = collect_bull_case(ticker, company_name)
+
+        # Agent 6 — Synthesize
+        brief = synthesize(parsed, market, evidence, bear, bull)
+
+        if "error" in brief and not brief.get("hypothesis_clean"):
+            raise HTTPException(status_code=500, detail=brief["error"])
+
+        return brief
+
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         print(traceback.format_exc())
