@@ -2,13 +2,25 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  outline: none;
+}
+
+html {
+  background-color: #080808;
 }
 
 body {
-  background-color: #0a0a0f;
+  background-color: #080808;
   color: #e2e8f0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100vh;
+}
+
+button {
+  outline: none;
+  border: none;
+  background: none;
+  font-family: inherit;
 }
 
 ::-webkit-scrollbar {
@@ -25,6 +37,23 @@ body {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

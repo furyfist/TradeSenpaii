@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 SUPPORTED_TICKERS = ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]
 
@@ -57,3 +58,23 @@ class ExplanationResponse(BaseModel):
     historical_note:  str
     confidence_tier:  str
     analogies:        list[dict]   # each analogy includes search_context + search_url
+
+class HypothesisRequest(BaseModel):
+    text: str
+
+class HypothesisResponse(BaseModel):
+    hypothesis_clean:    str
+    ticker:              str
+    current_price:       Optional[float]
+    target_price:        Optional[float]
+    implied_return_pct:  Optional[float]
+    feasibility_score:   int
+    reality_check:       str
+    technical_picture:   dict
+    historical_evidence: dict
+    bull_case:           list
+    bear_case:           list
+    parameters_to_monitor: list
+    summary:             str
+    disclaimer:          str
+    error:               Optional[str] = None
