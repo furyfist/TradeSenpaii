@@ -3,24 +3,90 @@ import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
 
+const STEPS = [
+  { id: 1, label: "PARSING HYPOTHESIS",        detail: "" },
+  { id: 2, label: "COLLECTING MARKET CONTEXT", detail: "" },
+  { id: 3, label: "SCANNING HISTORICAL EVIDENCE", detail: "" },
+  { id: 4, label: "RESEARCHING BEAR CASE",     detail: "" },
+  { id: 5, label: "RESEARCHING BULL CASE",     detail: "" },
+  { id: 6, label: "SYNTHESIZING RESEARCH BRIEF", detail: "" },
+];
+
 export default function HypothesisPage() {
   const [text,    setText]    = useState("");
   const [brief,   setBrief]   = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+  const [steps,     setSteps]     = useState(
+    STEPS.map(s => ({ ...s, status: "idle", detail: "" }))
+    // status: idle | running | done | error
+  );
 
   const submit = async () => {
-    if (!text.trim()) return;
-    setLoading(true); setError(null); setBrief(null);
-    try {
-      const res = await axios.post(`${API}/hypothesis`, { text });
-      setBrief(res.data);
-    } catch (e) {
-      setError(e.response?.data?.detail || "Backend error. Is the server running?");
-    } finally {
-      setLoading(false);
+  if (!text.trim()) return;
+  setLoading(true);
+  setError(null);
+  setBrief(null);
+  setSteps(STEPS.map(s => ({ ...s, status: "idle", detail: "" })));
+
+  try {
+    const response = await fetch(`${API}/hypothesis/stream`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ text }),
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const reader  = response.body.getReader();
+    const decoder = new TextDecoder();
+    let   buffer  = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n\n");
+      buffer = lines.pop(); // keep incomplete chunk
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const msg = JSON.parse(line.slice(6));
+
+          if (msg.status === "running") {
+            updateStep(msg.step, "running");
+          }
+          else if (msg.status === "done") {
+            // Build detail string from metadata
+            let detail = "";
+            if (msg.ticker)          detail = `→ ${msg.ticker}`;
+            if (msg.price)           detail = `→ $${msg.price?.toFixed(2)} · RSI ${msg.rsi?.toFixed(1)}`;
+            if (msg.base_rate != null) detail = `→ base rate ${msg.base_rate}%`;
+            if (msg.risks_found)     detail = `→ ${msg.risks_found} risks identified`;
+            if (msg.catalysts_found) detail = `→ ${msg.catalysts_found} catalysts identified`;
+            updateStep(msg.step, "done", detail);
+          }
+          else if (msg.status === "complete") {
+            setBrief(msg.brief);
+            setLoading(false);
+          }
+          else if (msg.status === "error") {
+            if (msg.step > 0) updateStep(msg.step, "error", msg.message);
+            else setError(msg.message || "Analysis failed.");
+            setLoading(false);
+          }
+        } catch (parseErr) {
+          console.warn("SSE parse error:", parseErr);
+        }
+      }
     }
-  };
+  } catch (e) {
+    setError(e.message || "Backend error.");
+    setLoading(false);
+  }
+};
 
   return (
     <div style={s.page}>
@@ -70,19 +136,30 @@ export default function HypothesisPage() {
         </div>
       </div>
 
-      {/* Loading state */}
-      {loading && (
-        <div style={s.loadingPanel}>
-          {[
-            "01  PARSING HYPOTHESIS",
-            "02  COLLECTING MARKET CONTEXT",
-            "03  SCANNING HISTORICAL EVIDENCE",
-            "04  RESEARCHING BEAR CASE",
-            "05  RESEARCHING BULL CASE",
-            "06  SYNTHESIZING RESEARCH BRIEF",
-          ].map((step, i) => (
-            <div key={i} style={{ ...s.loadingStep, animationDelay: `${i * 0.4}s` }}>
-              <span style={s.loadingDot}>◈</span> {step}
+      {/* Dynamic Steps Panel */}
+      {(loading || (steps[0].status !== "idle")) && !brief && (
+        <div style={s.stepsPanel}>
+          {steps.map((step) => (
+            <div key={step.id} style={{
+              ...s.stepRow,
+              ...(step.status === "running" ? s.stepRunning : {}),
+              ...(step.status === "done"    ? s.stepDone    : {}),
+              ...(step.status === "error"   ? s.stepError   : {}),
+            }}>
+              <span style={s.stepNum}>0{step.id}</span>
+              <span style={s.stepIcon}>
+                {step.status === "idle"    && "○"}
+                {step.status === "running" && <span style={s.spinner}>◈</span>}
+                {step.status === "done"    && "✓"}
+                {step.status === "error"   && "✗"}
+              </span>
+              <span style={s.stepLabel}>{step.label}</span>
+              {step.detail && (
+                <span style={s.stepDetail}>{step.detail}</span>
+              )}
+              {step.status === "running" && (
+                <span style={s.stepPulse}>PROCESSING</span>
+              )}
             </div>
           ))}
         </div>
@@ -375,5 +452,47 @@ const s = {
   disclaimer:  {
     fontSize: 10, color: "#1f2937", letterSpacing: 0.5,
     textAlign: "center", padding: "12px",
+  },
+    stepsPanel: {
+    background:   "#0a0a0a",
+    border:       "1px solid #1a1a1a",
+    marginBottom: 24,
+    overflow:     "hidden",
+  },
+  stepRow: {
+    display:     "flex",
+    alignItems:  "center",
+    gap:         12,
+    padding:     "14px 24px",
+    borderBottom:"1px solid #0f0f0f",
+    fontSize:    11,
+    color:       "#1f2937",
+    letterSpacing: 1,
+    transition:  "all 0.3s ease",
+  },
+  stepRunning: {
+    color:      "#f59e0b",
+    background: "rgba(245,158,11,0.03)",
+    borderLeft: "2px solid #f59e0b",
+  },
+  stepDone: {
+    color:      "#22c55e",
+    borderLeft: "2px solid rgba(34,197,94,0.3)",
+  },
+  stepError: {
+    color:      "#ef4444",
+    borderLeft: "2px solid rgba(239,68,68,0.3)",
+  },
+  stepNum:    { color: "#1f2937", fontSize: 10, minWidth: 20 },
+  stepIcon:   { fontSize: 12, minWidth: 16 },
+  stepLabel:  { flex: 1 },
+  stepDetail: { fontSize: 10, color: "#475569", marginLeft: "auto" },
+  stepPulse:  {
+    fontSize: 9, color: "#f59e0b",
+    letterSpacing: 2, animation: "pulse 1s ease-in-out infinite",
+  },
+  spinner: {
+    display:   "inline-block",
+    animation: "spin 1s linear infinite",
   },
 };
