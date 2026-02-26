@@ -6,6 +6,7 @@ import SentimentGauge   from "./components/SentimentGauge";
 import SignalBreakdown  from "./components/SignalBreakdown";
 import ExplanationPanel from "./components/ExplanationPanel";
 import HypothesisPage   from "./components/HypothesisPage";
+import LandingPage from "./components/LandingPage";
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -61,6 +62,11 @@ export default function App() {
           <NavLink to="/" end style={({ isActive }) => ({
             ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
           })}>
+            ▸ HOME
+          </NavLink>
+          <NavLink to="/dashboard" style={({ isActive }) => ({
+            ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
+          })}>
             ▸ DASHBOARD
           </NavLink>
           <NavLink to="/hypothesis" style={({ isActive }) => ({
@@ -81,7 +87,8 @@ export default function App() {
 
       {/* Routes */}
       <Routes>
-        <Route path="/" element={
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={
           <DashboardPage
             activeTicker={activeTicker} setActiveTicker={setActiveTicker}
             tickers={tickers} prediction={prediction} priceData={priceData}
