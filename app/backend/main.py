@@ -186,7 +186,7 @@ def predict(ticker: str = Query(default="KO")):
     except Exception as e:
         import traceback
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 
 @app.get("/price-history", response_model=PriceHistoryResponse)
@@ -210,7 +210,9 @@ def price_history(ticker: str = Query(default="KO")):
             ]
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 
 @app.get("/sentiment-history", response_model=SentimentHistoryResponse)
@@ -223,7 +225,9 @@ def sentiment_history(ticker: str = Query(default="KO")):
             data=[SentimentPoint(**d) for d in data]
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 
 @app.get("/model-info", response_model=ModelInfoResponse)
@@ -233,7 +237,9 @@ def model_info(ticker: str = Query(default="KO")):
         info = predictor.get_model_info(ticker)
         return ModelInfoResponse(**info)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 
 @app.get("/explain", response_model=ExplanationResponse)
@@ -270,7 +276,7 @@ def explain(ticker: str = Query(default="KO")):
     except Exception as e:
         import traceback
         print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 @app.post("/hypothesis")
 def hypothesis(request: HypothesisRequest):
