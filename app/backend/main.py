@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime, timedelta
 import pandas as pd
@@ -11,6 +12,7 @@ import threading
 from fastapi.responses import StreamingResponse
 import json
 import os
+import secrets
 load_dotenv()
 
 from models import (
@@ -69,6 +71,24 @@ app = FastAPI(title="TradeSenpai API v2", version="2.0.0", lifespan=lifespan)
 
 predictor = Predictor()
 
+security = HTTPBasic()
+
+def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_password = os.getenv("ADMIN_PASSWORD", "")
+    if not correct_password:
+        raise HTTPException(status_code=500, detail="Admin password not configured.")
+    is_correct = secrets.compare_digest(
+        credentials.password.encode("utf8"),
+        correct_password.encode("utf8"),
+    )
+    if not is_correct:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
 # Cache per ticker
 _cache: dict = {}
 CACHE_TTL_MINUTES = 30
@@ -77,7 +97,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type"],
+    allow_credentials=True,
 )
 
 TICKER_NAMES = {
@@ -309,13 +330,13 @@ def subscribe(body: dict):
 
 
 @app.get("/subscribers")
-def list_subscribers():
+def list_subscribers(admin: str = Depends(verify_admin)):
     """Admin — list all subscriber requests."""
     return {"subscribers": get_all_subscribers()}
 
 
 @app.post("/subscribers/{sub_id}/approve")
-def approve(sub_id: int, body: dict):
+def approve(sub_id: int, body: dict, admin: str = Depends(verify_admin)):
     """
     Admin approves a subscriber by providing their Telegram chat ID.
     Admin gets chat ID by asking the user to message the bot
@@ -359,31 +380,11 @@ def approve(sub_id: int, body: dict):
 
 
 @app.post("/subscribers/{sub_id}/reject")
-def reject(sub_id: int):
+def reject(sub_id: int, admin: str = Depends(verify_admin)):
     """Admin rejects a subscriber request."""
     return reject_subscriber(sub_id)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Preload all models
-    print("[STARTUP] Preloading all ticker models...")
-    for ticker in SUPPORTED_TICKERS:
-        try:
-            predictor._load_model(ticker)
-            print(f"[STARTUP] {ticker} model ready")
-        except Exception as e:
-            print(f"[STARTUP] Could not load {ticker}: {e}")
 
-    # Start alert scheduler
-    scheduler = create_scheduler()
-    scheduler.start()
-    print("[STARTUP] Alert scheduler started")
-
-    yield
-
-    # Shutdown scheduler cleanly
-    scheduler.shutdown(wait=False)
-    print("[SHUTDOWN] Scheduler stopped")
 
 @app.post("/hypothesis/stream")
 def hypothesis_stream(request: HypothesisRequest):

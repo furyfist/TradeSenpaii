@@ -23,3 +23,5 @@ stock-analysis/data/raw/sec_filings/
 app/backend/test_similarity.py
 app\backend\.env
 v3.md
+app/backend/.env
+app/frontend/.env
