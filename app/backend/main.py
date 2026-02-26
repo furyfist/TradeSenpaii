@@ -256,6 +256,78 @@ def hypothesis(request: HypothesisRequest):
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+# ── Subscriber Endpoints 
+
+@app.post("/subscribe")
+def subscribe(body: dict):
+    """
+    Any user can submit their Telegram username to request alerts.
+    Admin must approve before they receive messages.
+    """
+    username = body.get("username", "").strip().lstrip("@")
+    if not username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty.")
+    if len(username) > 50:
+        raise HTTPException(status_code=400, detail="Username too long.")
+    result = add_subscriber(username)
+    return result
+
+
+@app.get("/subscribers")
+def list_subscribers():
+    """Admin — list all subscriber requests."""
+    return {"subscribers": get_all_subscribers()}
+
+
+@app.post("/subscribers/{sub_id}/approve")
+def approve(sub_id: int, body: dict):
+    """
+    Admin approves a subscriber by providing their Telegram chat ID.
+    Admin gets chat ID by asking the user to message the bot
+    and checking /getUpdates.
+    """
+    telegram_id = str(body.get("telegram_id", "")).strip()
+    if not telegram_id:
+        raise HTTPException(status_code=400, detail="telegram_id required.")
+    result = approve_subscriber(sub_id, telegram_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+
+    # Send welcome message to the newly approved subscriber
+    from alerts.telegram_bot import send_message as _send
+    try:
+        import asyncio
+        from telegram import Bot
+        from dotenv import load_dotenv
+        load_dotenv()
+        token = os.getenv("TELEGRAM_BOT_TOKEN")
+        async def _welcome():
+            bot = Bot(token=token)
+            await bot.send_message(
+                chat_id    = telegram_id,
+                text       = (
+                    "🤖 <b>TradeSenpai Alerts — Approved!</b>\n\n"
+                    "You'll now receive:\n"
+                    "• 🌅 Morning brief (9:30 AM ET)\n"
+                    "• 🌆 Evening outcomes (4:15 PM ET)\n"
+                    "• 🔄 Direction flip alerts\n"
+                    "• 📄 Sentiment spike alerts\n\n"
+                    "⚠️ <i>Educational simulation only. Not financial advice.</i>"
+                ),
+                parse_mode = "HTML",
+            )
+        asyncio.run(_welcome())
+    except Exception as e:
+        print(f"[WARN] Welcome message failed: {e}")
+
+    return result
+
+
+@app.post("/subscribers/{sub_id}/reject")
+def reject(sub_id: int):
+    """Admin rejects a subscriber request."""
+    return reject_subscriber(sub_id)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Preload all models
