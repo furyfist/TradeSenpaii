@@ -8,7 +8,8 @@ from explainer import explain_prediction
 from alerts.scheduler import create_scheduler
 from alerts.bot_listener import create_bot_app
 import threading
-
+from fastapi.responses import StreamingResponse
+import json
 import os
 load_dotenv()
 
@@ -383,6 +384,84 @@ async def lifespan(app: FastAPI):
     # Shutdown scheduler cleanly
     scheduler.shutdown(wait=False)
     print("[SHUTDOWN] Scheduler stopped")
+
+@app.post("/hypothesis/stream")
+def hypothesis_stream(request: HypothesisRequest):
+    text = request.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Empty hypothesis.")
+
+    def event_stream():
+        def emit(step: int, status: str, data: dict = {}):
+            payload = json.dumps({"step": step, "status": status, **data})
+            yield f"data: {payload}\n\n"
+
+        try:
+            # Agent 1
+            yield from emit(1, "running")
+            parsed = parse_hypothesis(text)
+            if parsed.get("error"):
+                yield from emit(1, "error", {"message": parsed["error"]})
+                return
+            yield from emit(1, "done", {"ticker": parsed["ticker"]})
+
+            ticker       = parsed["ticker"]
+            company_name = TICKER_FULL_NAME.get(ticker, ticker)
+
+            # Agent 2
+            yield from emit(2, "running")
+            market = collect_market_context(ticker)
+            yield from emit(2, "done", {
+                "price": market.get("current_price"),
+                "rsi":   market.get("signals", {}).get("rsi_14"),
+            })
+
+            # Agent 3
+            yield from emit(3, "running")
+            evidence = collect_historical_evidence(
+                ticker,
+                parsed.get("implied_return_pct"),
+                parsed.get("timeframe_days", 90),
+            )
+            yield from emit(3, "done", {
+                "base_rate": evidence.get("base_rates", {}).get("base_rate_for_implied")
+            })
+
+            # Agent 4
+            yield from emit(4, "running")
+            bear = collect_bear_case(ticker, company_name)
+            yield from emit(4, "done", {
+                "risks_found": len(bear.get("risks", []))
+            })
+
+            # Agent 5
+            yield from emit(5, "running")
+            bull = collect_bull_case(ticker, company_name)
+            yield from emit(5, "done", {
+                "catalysts_found": len(bull.get("catalysts", []))
+            })
+
+            # Agent 6
+            yield from emit(6, "running")
+            brief = synthesize(parsed, market, evidence, bear, bull)
+            yield from emit(6, "done")
+
+            # Final result
+            yield f"data: {json.dumps({'step': 0, 'status': 'complete', 'brief': brief})}\n\n"
+
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            yield f"data: {json.dumps({'step': 0, 'status': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 @app.get("/tickers")
