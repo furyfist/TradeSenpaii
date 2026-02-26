@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import SubscribeForm from "./SubscribeForm";
 
 const TICKERS = [
   { symbol: "KO",    name: "Coca-Cola",          sector: "Consumer Staples", color: "#ef4444" },
@@ -187,7 +188,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+        <section style={{ maxWidth: 700, margin: "0 auto", padding: "0 64px 80px" }}>
+        <SubscribeForm />
+        </section>
       {/* Footer */}
       <footer style={s.footer}>
         <div style={s.footerLeft}>

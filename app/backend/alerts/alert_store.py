@@ -89,6 +89,7 @@ def init_subscribers_table():
 def add_subscriber(username: str) -> dict:
     """Add a new subscriber request. Status = pending."""
     # Check if already exists
+    init_subscribers_table()
     with _conn() as con:
         existing = con.execute(
             "SELECT id, status FROM subscribers WHERE username = ?",
