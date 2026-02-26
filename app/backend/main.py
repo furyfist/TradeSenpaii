@@ -5,6 +5,8 @@ import pandas as pd
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from explainer import explain_prediction
+from alerts.scheduler import create_scheduler
+
 import os
 load_dotenv()
 
@@ -249,7 +251,29 @@ def hypothesis(request: HypothesisRequest):
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Preload all models
+    print("[STARTUP] Preloading all ticker models...")
+    for ticker in SUPPORTED_TICKERS:
+        try:
+            predictor._load_model(ticker)
+            print(f"[STARTUP] {ticker} model ready")
+        except Exception as e:
+            print(f"[STARTUP] Could not load {ticker}: {e}")
 
+    # Start alert scheduler
+    scheduler = create_scheduler()
+    scheduler.start()
+    print("[STARTUP] Alert scheduler started")
+
+    yield
+
+    # Shutdown scheduler cleanly
+    scheduler.shutdown(wait=False)
+    print("[SHUTDOWN] Scheduler stopped")
+
+    
 @app.get("/tickers")
 def get_tickers():
     return {
