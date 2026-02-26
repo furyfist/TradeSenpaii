@@ -328,4 +328,72 @@ const s = {
     border: "1px solid #111", marginBottom: 24,
   },
   statBox: {
-    flex: 1, back
+    flex: 1, background: "#0a0a0a", padding: "20px",
+    display: "flex", flexDirection: "column", gap: 4,
+  },
+  statVal:   { fontSize: 28, fontWeight: 800, letterSpacing: 2 },
+  statLabel: { fontSize: 9,  color: "#374151", letterSpacing: 2 },
+
+  // Help box
+  helpBox: {
+    background: "#0a0a0a", border: "1px solid #111",
+    borderLeft: "2px solid #f59e0b", padding: "16px 20px",
+    marginBottom: 24,
+  },
+  helpTitle: { fontSize: 9, color: "#f59e0b", letterSpacing: 2, marginBottom: 10 },
+  helpSteps: {
+    display: "flex", gap: 12, alignItems: "center",
+    flexWrap: "wrap", fontSize: 10, color: "#374151",
+  },
+  helpArrow: { color: "#f59e0b" },
+
+  // Sections
+  section:      { marginBottom: 32 },
+  sectionTitle: {
+    fontSize: 10, color: "#475569", letterSpacing: 2,
+    marginBottom: 12, display: "flex", alignItems: "center", gap: 8,
+  },
+  sectionCount: {
+    background: "rgba(245,158,11,0.1)", color: "#f59e0b",
+    padding: "1px 8px", fontSize: 10, border: "1px solid rgba(245,158,11,0.2)",
+  },
+  loading: { fontSize: 11, color: "#374151", padding: "16px 0" },
+  empty:   { fontSize: 11, color: "#1f2937", padding: "16px 0" },
+
+  // Subscriber card
+  subCard: {
+    background: "#0a0a0a", border: "1px solid #111",
+    borderLeft: "2px solid #f59e0b20",
+    padding: "16px 20px", marginBottom: 4,
+    display: "flex", justifyContent: "space-between",
+    alignItems: "center", gap: 16, flexWrap: "wrap",
+  },
+  subInfo: {
+    display: "flex", flexDirection: "column", gap: 4,
+  },
+  subUsername: { fontSize: 14, fontWeight: 700, color: "#f1f5f9", letterSpacing: 1 },
+  subMeta:     { fontSize: 10, color: "#374151" },
+  subId:       { fontSize: 9,  color: "#1f2937" },
+  subActions:  { display: "flex", gap: 8, alignItems: "center" },
+  chatIdInput: {
+    background: "#080808", border: "1px solid #222",
+    color: "#f1f5f9", padding: "8px 12px", fontSize: 11,
+    fontFamily: "'IBM Plex Mono', monospace", outline: "none", width: 200,
+  },
+  approveBtn: {
+    padding: "8px 16px", background: "#22c55e", border: "none",
+    color: "#000", fontWeight: 800, fontSize: 10, letterSpacing: 1.5,
+    cursor: "pointer", fontFamily: "'IBM Plex Mono', monospace",
+  },
+  rejectBtn: {
+    padding: "8px 16px", background: "transparent",
+    border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444",
+    fontSize: 10, letterSpacing: 1.5, cursor: "pointer",
+    fontFamily: "'IBM Plex Mono', monospace",
+  },
+  feedback: {
+    width: "100%", fontSize: 11, color: "#94a3b8",
+    paddingTop: 8, borderTop: "1px solid #0f0f0f",
+  },
+};
+

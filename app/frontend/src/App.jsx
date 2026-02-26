@@ -7,6 +7,7 @@ import SignalBreakdown  from "./components/SignalBreakdown";
 import ExplanationPanel from "./components/ExplanationPanel";
 import HypothesisPage   from "./components/HypothesisPage";
 import LandingPage from "./components/LandingPage";
+import AdminPanel from "./components/AdminPanel";
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -97,6 +98,7 @@ export default function App() {
           />
         }/>
         <Route path="/hypothesis" element={<HypothesisPage />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
     </div>
   );
