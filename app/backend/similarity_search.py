@@ -4,7 +4,7 @@ from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 
 # Path to processed data
-BASE_PATH = Path("../../stock-analysis/data/processed")
+BASE_PATH = Path(__file__).resolve().parent.parent.parent / "stock-analysis" / "data" / "processed"
 
 # Features used for similarity — same as model training
 # Excludes leaky cols, date, target, and string cols
