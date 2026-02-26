@@ -16,6 +16,11 @@ from models import (
     PricePoint, SentimentPoint, SUPPORTED_TICKERS,
     ExplanationResponse,HypothesisRequest, HypothesisResponse
 )
+from alerts.alert_store import (
+    init_db, add_subscriber, get_all_subscribers,
+    approve_subscriber, reject_subscriber
+)
+
 from predictor import Predictor
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
 from sentiment_loader import load_sentiment_history, load_latest_sentiment
@@ -273,7 +278,7 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown(wait=False)
     print("[SHUTDOWN] Scheduler stopped")
 
-    
+
 @app.get("/tickers")
 def get_tickers():
     return {

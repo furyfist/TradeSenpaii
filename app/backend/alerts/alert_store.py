@@ -11,7 +11,7 @@ def _conn():
 
 
 def init_db():
-    """Create tables on first run."""
+    """Create all tables on first run."""
     with _conn() as con:
         con.execute("""
             CREATE TABLE IF NOT EXISTS sent_alerts (
@@ -27,6 +27,7 @@ def init_db():
             ON sent_alerts(alert_key)
         """)
         con.commit()
+    init_subscribers_table()
     print("[INFO][alert_store] DB initialized at", DB_PATH)
 
 
