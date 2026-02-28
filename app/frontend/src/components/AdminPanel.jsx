@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { supabase } from "../lib/supabase";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -9,8 +10,14 @@ export default function AdminPanel({ token, onLogout }) {
     const [approveInputs, setApproveInputs] = useState({}); // { id: chatId }
     const [feedback, setFeedback] = useState({}); // { id: message }
 
-    const authHeader = {
-        headers: { Authorization: `Bearer ${token}` },
+    const getAuthHeader = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token ?? token;
+        return {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        };
     };
 
     useEffect(() => {
@@ -20,7 +27,8 @@ export default function AdminPanel({ token, onLogout }) {
     const fetchSubscribers = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${API}/subscribers`, authHeader);
+            const config = await getAuthHeader();
+            const res = await axios.get(`${API}/subscribers`, config);
             setSubscribers(res.data.subscribers);
         } catch (e) {
             console.error("Failed to fetch subscribers", e);
@@ -36,11 +44,10 @@ export default function AdminPanel({ token, onLogout }) {
             return;
         }
         try {
-            await axios.post(
-                `${API}/subscribers/${id}/approve`,
-                { telegram_id: chatId },
-                authHeader
-            );
+            const config = await getAuthHeader();
+            await axios.post(`${API}/subscribers/${id}/approve`, {
+                telegram_id: chatId
+            }, config);
             setFeedback(f => ({ ...f, [id]: "✅ Approved — welcome message sent" }));
             fetchSubscribers();
         } catch (e) {
@@ -50,7 +57,8 @@ export default function AdminPanel({ token, onLogout }) {
 
     const reject = async (id) => {
         try {
-            await axios.post(`${API}/subscribers/${id}/reject`, {}, authHeader);
+            const config = await getAuthHeader();
+            await axios.post(`${API}/subscribers/${id}/reject`, {}, config);
             setFeedback(f => ({ ...f, [id]: "🚫 Rejected" }));
             fetchSubscribers();
         } catch (e) {

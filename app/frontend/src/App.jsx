@@ -9,12 +9,7 @@ import HypothesisPage from "./components/HypothesisPage";
 import LandingPage from "./components/LandingPage";
 import AdminPanel from "./components/AdminPanel";
 import LoginPage from "./components/LoginPage";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from "./lib/supabase";
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -32,19 +27,34 @@ export default function App() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const [adminToken, setAdminToken] = useState(
-    sessionStorage.getItem("admin_jwt") || null
-  );
+  const [adminSession, setAdminSession] = useState(null);
 
-  const handleLogin = (token) => {
-    sessionStorage.setItem("admin_jwt", token);
-    setAdminToken(token);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.user_metadata?.role === "admin") {
+        setAdminSession(session);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user?.user_metadata?.role === "admin") {
+          setAdminSession(session);
+        } else {
+          setAdminSession(null);
+        }
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = (session) => {
+    setAdminSession(session);
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    sessionStorage.removeItem("admin_jwt");
-    setAdminToken(null);
+    setAdminSession(null);
   };
 
   useEffect(() => {
@@ -124,8 +134,8 @@ export default function App() {
         <Route
           path="/ts-ops-7x9k"
           element={
-            adminToken
-              ? <AdminPanel token={adminToken} onLogout={handleLogout} />
+            adminSession
+              ? <AdminPanel token={adminSession.access_token} onLogout={handleLogout} />
               : <LoginPage onLogin={handleLogin} />
           }
         />
