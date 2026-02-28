@@ -89,7 +89,7 @@ CACHE_TTL_MINUTES = 30
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://trade-senpaii.vercel.app",],
     allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type"],
     allow_credentials=True,
