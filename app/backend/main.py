@@ -25,7 +25,7 @@ from models import (
     ExplanationResponse,HypothesisRequest, HypothesisResponse
 )
 from alerts.alert_store import (
-    init_db, add_subscriber, get_all_subscribers,
+    add_subscriber, get_all_subscribers,
     approve_subscriber, reject_subscriber
 )
 

@@ -11,7 +11,7 @@ from datetime import datetime
 from predictor        import Predictor
 from feature_engineer import get_latest_feature_row
 from alerts.telegram_bot import broadcast as send_message
-from alerts.alert_store  import init_db, already_sent, mark_sent
+from alerts.alert_store  import already_sent, mark_sent
 from alerts.digest       import fmt_morning_brief, fmt_evening_brief, fmt_weekly_digest
 from alerts.watcher      import run_all_checks
 
@@ -101,7 +101,7 @@ def job_signal_watcher():
 
 def create_scheduler() -> BackgroundScheduler:
     """Build and return configured scheduler. Call start() separately."""
-    init_db()
+
     scheduler = BackgroundScheduler(timezone="America/New_York")
 
     # Morning brief — 9:30 AM ET weekdays
