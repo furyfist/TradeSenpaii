@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, Query, Depends, Request
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -13,9 +12,9 @@ from alerts.scheduler import create_scheduler
 from alerts.bot_listener import create_bot_app
 import threading
 from fastapi.responses import StreamingResponse
+from auth import require_admin
 import json
 import os
-import secrets
 load_dotenv()
 
 from models import (
@@ -78,23 +77,6 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-security = HTTPBasic()
-
-def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_password = os.getenv("ADMIN_PASSWORD", "")
-    if not correct_password:
-        raise HTTPException(status_code=500, detail="Admin password not configured.")
-    is_correct = secrets.compare_digest(
-        credentials.password.encode("utf8"),
-        correct_password.encode("utf8"),
-    )
-    if not is_correct:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
 
 # Cache per ticker
 _cache: dict = {}
@@ -375,13 +357,13 @@ def subscribe(request: Request, body: dict):
 
 
 @app.get("/subscribers")
-def list_subscribers(admin: str = Depends(verify_admin)):
+def list_subscribers(admin: str = Depends(require_admin)):
     """Admin — list all subscriber requests."""
     return {"subscribers": get_all_subscribers()}
 
 
 @app.post("/subscribers/{sub_id}/approve")
-def approve(sub_id: int, body: dict, admin: str = Depends(verify_admin)):
+def approve(sub_id: int, body: dict, admin: str = Depends(require_admin)):
     """
     Admin approves a subscriber by providing their Telegram chat ID.
     Admin gets chat ID by asking the user to message the bot
@@ -399,8 +381,6 @@ def approve(sub_id: int, body: dict, admin: str = Depends(verify_admin)):
     try:
         import asyncio
         from telegram import Bot
-        from dotenv import load_dotenv
-        load_dotenv()
         token = os.getenv("TELEGRAM_BOT_TOKEN")
         async def _welcome():
             bot = Bot(token=token)
@@ -425,7 +405,7 @@ def approve(sub_id: int, body: dict, admin: str = Depends(verify_admin)):
 
 
 @app.post("/subscribers/{sub_id}/reject")
-def reject(sub_id: int, admin: str = Depends(verify_admin)):
+def reject(sub_id: int, admin: str = Depends(require_admin)):
     """Admin rejects a subscriber request."""
     return reject_subscriber(sub_id)
 
