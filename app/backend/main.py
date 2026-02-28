@@ -57,8 +57,13 @@ async def lifespan(app: FastAPI):
     # Start bot listener in background thread
     def run_bot():
         import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         bot_app = create_bot_app()
-        asyncio.run(bot_app.run_polling())
+        loop.run_until_complete(bot_app.initialize())
+        loop.run_until_complete(bot_app.updater.start_polling())
+        loop.run_until_complete(bot_app.start())
+        loop.run_forever()
 
     bot_thread = threading.Thread(target=run_bot, daemon=True)
     bot_thread.start()
