@@ -8,6 +8,8 @@ import ExplanationPanel from "./components/ExplanationPanel";
 import HypothesisPage from "./components/HypothesisPage";
 import LandingPage from "./components/LandingPage";
 import AdminPanel from "./components/AdminPanel";
+import LoginPage from "./components/LoginPage";
+import { supabase } from "./lib/supabase";
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -24,6 +26,36 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  const [adminSession, setAdminSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.user_metadata?.role === "admin") {
+        setAdminSession(session);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user?.user_metadata?.role === "admin") {
+          setAdminSession(session);
+        } else {
+          setAdminSession(null);
+        }
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = (session) => {
+    setAdminSession(session);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAdminSession(null);
+  };
 
   useEffect(() => {
     fetchTickers().then(res => setTickers(res.data.tickers)).catch(() => setTickers([]));
@@ -98,7 +130,15 @@ export default function App() {
           />
         } />
         <Route path="/hypothesis" element={<HypothesisPage />} />
-        <Route path="/ts-ops-7x9k" element={<AdminPanel />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route
+          path="/ts-ops-7x9k"
+          element={
+            adminSession
+              ? <AdminPanel token={adminSession.access_token} onLogout={handleLogout} />
+              : <LoginPage onLogin={handleLogin} />
+          }
+        />
       </Routes>
     </div>
   );
