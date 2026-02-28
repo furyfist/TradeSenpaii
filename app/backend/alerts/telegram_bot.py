@@ -62,3 +62,4 @@ if __name__ == "__main__":
         "🤖 <b>TradeSenpai V3</b> — Telegram alerts online.\n"
         "Backend connected successfully."
     )
+    
