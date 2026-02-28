@@ -8,6 +8,13 @@ import ExplanationPanel from "./components/ExplanationPanel";
 import HypothesisPage from "./components/HypothesisPage";
 import LandingPage from "./components/LandingPage";
 import AdminPanel from "./components/AdminPanel";
+import LoginPage from "./components/LoginPage";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -24,6 +31,21 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  const [adminToken, setAdminToken] = useState(
+    sessionStorage.getItem("admin_jwt") || null
+  );
+
+  const handleLogin = (token) => {
+    sessionStorage.setItem("admin_jwt", token);
+    setAdminToken(token);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    sessionStorage.removeItem("admin_jwt");
+    setAdminToken(null);
+  };
 
   useEffect(() => {
     fetchTickers().then(res => setTickers(res.data.tickers)).catch(() => setTickers([]));
@@ -98,7 +120,15 @@ export default function App() {
           />
         } />
         <Route path="/hypothesis" element={<HypothesisPage />} />
-        <Route path="/ts-ops-7x9k" element={<AdminPanel />} />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route
+          path="/ts-ops-7x9k"
+          element={
+            adminToken
+              ? <AdminPanel token={adminToken} onLogout={handleLogout} />
+              : <LoginPage onLogin={handleLogin} />
+          }
+        />
       </Routes>
     </div>
   );

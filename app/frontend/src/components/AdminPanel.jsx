@@ -3,53 +3,24 @@ import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL;
 
-export default function AdminPanel() {
-    const [unlocked, setUnlocked] = useState(false);
-    const [password, setPassword] = useState("");  // stored only in memory
-    const [passwordInput, setPasswordInput] = useState("");
-    const [passwordError, setPasswordError] = useState(false);
+export default function AdminPanel({ token, onLogout }) {
     const [subscribers, setSubscribers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [approveInputs, setApproveInputs] = useState({}); // { id: chatId }
     const [feedback, setFeedback] = useState({}); // { id: message }
 
-    // Restore session password if we reloaded mid-session
-    useEffect(() => {
-        const saved = sessionStorage.getItem("admin_pwd");
-        if (saved) {
-            setPassword(saved);
-            setUnlocked(true);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (unlocked) fetchSubscribers();
-    }, [unlocked]);
-
-    const authHeader = (pwd) => ({
-        headers: { Authorization: "Basic " + btoa("admin:" + pwd) },
-    });
-
-    const checkPassword = async () => {
-        try {
-            await axios.get(`${API}/subscribers`, authHeader(passwordInput));
-            // 200 → correct password
-            sessionStorage.setItem("admin_pwd", passwordInput);
-            setPassword(passwordInput);
-            setUnlocked(true);
-            setPasswordError(false);
-        } catch (e) {
-            if (e.response?.status === 401) {
-                setPasswordError(true);
-                setPasswordInput("");
-            }
-        }
+    const authHeader = {
+        headers: { Authorization: `Bearer ${token}` },
     };
+
+    useEffect(() => {
+        fetchSubscribers();
+    }, []);
 
     const fetchSubscribers = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${API}/subscribers`, authHeader(password));
+            const res = await axios.get(`${API}/subscribers`, authHeader);
             setSubscribers(res.data.subscribers);
         } catch (e) {
             console.error("Failed to fetch subscribers", e);
@@ -68,7 +39,7 @@ export default function AdminPanel() {
             await axios.post(
                 `${API}/subscribers/${id}/approve`,
                 { telegram_id: chatId },
-                authHeader(password)
+                authHeader
             );
             setFeedback(f => ({ ...f, [id]: "✅ Approved — welcome message sent" }));
             fetchSubscribers();
@@ -79,7 +50,7 @@ export default function AdminPanel() {
 
     const reject = async (id) => {
         try {
-            await axios.post(`${API}/subscribers/${id}/reject`, {}, authHeader(password));
+            await axios.post(`${API}/subscribers/${id}/reject`, {}, authHeader);
             setFeedback(f => ({ ...f, [id]: "🚫 Rejected" }));
             fetchSubscribers();
         } catch (e) {
@@ -87,48 +58,9 @@ export default function AdminPanel() {
         }
     };
 
-    const logout = () => {
-        sessionStorage.removeItem("admin_pwd");
-        setPassword("");
-        setUnlocked(false);
-    };
-
     const pending = subscribers.filter(s => s.status === "pending");
     const approved = subscribers.filter(s => s.status === "approved");
     const rejected = subscribers.filter(s => s.status === "rejected");
-
-    // ── Password Gate ───────────────────────────────────────────────────────────
-    if (!unlocked) {
-        return (
-            <div style={s.gate}>
-                <div style={s.gateBox}>
-                    <div style={s.gateTitle}>⬡ ADMIN ACCESS</div>
-                    <div style={s.gateSubtitle}>TradeSenpai · Restricted Area</div>
-                    <div style={s.gateInputRow}>
-                        <span style={s.gateIcon}>🔑</span>
-                        <input
-                            style={s.gateInput}
-                            type="password"
-                            value={passwordInput}
-                            onChange={e => { setPasswordInput(e.target.value); setPasswordError(false); }}
-                            onKeyDown={e => e.key === "Enter" && checkPassword()}
-                            placeholder="admin password"
-                            autoFocus
-                        />
-                        <button style={s.gateBtn} onClick={checkPassword}>
-                            ENTER →
-                        </button>
-                    </div>
-                    {passwordError && (
-                        <div style={s.gateError}>⚠ Incorrect password</div>
-                    )}
-                    <div style={s.gateNote}>
-                        Direct URL access only · Not linked in navigation
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     // ── Admin Panel ─────────────────────────────────────────────────────────────
     return (
@@ -142,7 +74,7 @@ export default function AdminPanel() {
                 </div>
                 <div style={s.headerRight}>
                     <button style={s.refreshBtn} onClick={fetchSubscribers}>↻ REFRESH</button>
-                    <button style={s.logoutBtn} onClick={logout}>LOCK ⬡</button>
+                    <button style={s.logoutBtn} onClick={onLogout}>LOCK ⬡</button>
                 </div>
             </div>
 
