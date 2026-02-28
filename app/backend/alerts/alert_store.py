@@ -87,9 +87,11 @@ def init_subscribers_table():
     print("[INFO][alert_store] Subscribers table ready")
 
 
-def add_subscriber(username: str) -> dict:
-    """Add a new subscriber request. Status = pending."""
-    # Check if already exists
+def add_subscriber(username: str, telegram_id: str = None) -> dict:
+    """Add a new subscriber request.
+    If telegram_id is provided, auto-approve immediately.
+    Otherwise, status = pending (admin must approve).
+    """
     init_subscribers_table()
     with _conn() as con:
         existing = con.execute(
@@ -105,17 +107,32 @@ def add_subscriber(username: str) -> dict:
                 "message":  f"Already registered with status: {existing[1]}",
             }
 
-        cur = con.execute(
-            "INSERT INTO subscribers (username, status, requested_at) VALUES (?,?,?)",
-            (username, "pending", datetime.now().isoformat())
-        )
-        con.commit()
-        return {
-            "id":       cur.lastrowid,
-            "username": username,
-            "status":   "pending",
-            "message":  "Request submitted. Pending admin approval.",
-        }
+        if telegram_id:
+            # User provided their chat ID → auto-approve
+            cur = con.execute(
+                "INSERT INTO subscribers (username, telegram_id, status, requested_at, approved_at) VALUES (?,?,?,?,?)",
+                (username, telegram_id, "approved", datetime.now().isoformat(), datetime.now().isoformat())
+            )
+            con.commit()
+            return {
+                "id":        cur.lastrowid,
+                "username":  username,
+                "status":    "approved",
+                "message":   "Subscribed! You'll receive alerts shortly.",
+            }
+        else:
+            # No chat ID → pending admin approval
+            cur = con.execute(
+                "INSERT INTO subscribers (username, status, requested_at) VALUES (?,?,?)",
+                (username, "pending", datetime.now().isoformat())
+            )
+            con.commit()
+            return {
+                "id":       cur.lastrowid,
+                "username": username,
+                "status":   "pending",
+                "message":  "Request submitted. Pending admin approval.",
+            }
 
 
 def get_all_subscribers() -> list[dict]:
