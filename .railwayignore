@@ -1,0 +1,6 @@
+stock-analysis/data/raw/
+venv/
+app/frontend/node_modules/
+app/frontend/dist/
+*.ipynb
+stock-analysis/notebooks/

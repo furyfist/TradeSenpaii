@@ -25,3 +25,5 @@ app\backend\.env
 v3.md
 app/backend/.env
 app/frontend/.env
+app/frontend/.env.development
+app/frontend/.env.production
