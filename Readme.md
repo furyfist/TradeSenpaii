@@ -4,6 +4,8 @@
 
 **Version 3.0 — February 2026**
 
+📄 **[API Reference](Api_reference.md)** — Full endpoint documentation (V4 · March 2026)
+
 ---
 
 ## Overview
