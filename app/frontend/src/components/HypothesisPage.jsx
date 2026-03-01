@@ -312,14 +312,26 @@ function CasePanel({ title, items, color }) {
     <div style={{ ...s.card, borderTop: `2px solid ${color}20` }}>
       <div style={{ ...s.cardTitle, color }}>{title}</div>
       {(items || []).map((item, i) => (
-        <div key={i} style={s.caseItem}>
+        <div key={i} style={{
+          ...s.caseItem,
+          ...(item.source_url ? s.caseItemCited : {}),
+        }}>
           <div style={{ ...s.caseTitle, color }}>{item.title}</div>
           <div style={s.caseDesc}>{item.description}</div>
-          {item.source_url && (
-            <a href={item.source_url} target="_blank" rel="noreferrer" style={s.caseLink}>
-              SOURCE →
+          {item.source_url ? (
+            <a href={item.source_url} target="_blank" rel="noreferrer" style={s.caseLink}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "rgba(245,158,11,0.25)";
+                e.currentTarget.style.color = "#f59e0b";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "rgba(245,158,11,0.12)";
+                e.currentTarget.style.color = "#d97706";
+              }}
+            >
+              ◈ SOURCE ↗
             </a>
-          )}
+          ) : null}
         </div>
       ))}
     </div>
@@ -441,11 +453,25 @@ const s = {
   caseItem: {
     padding: "12px 0", borderBottom: "1px solid #0f0f0f",
   },
+  caseItemCited: {
+    paddingLeft: 10,
+    borderLeft: "2px solid rgba(245,158,11,0.45)",
+    marginLeft: -12,
+  },
   caseTitle: { fontSize: 11, fontWeight: 700, letterSpacing: 1, marginBottom: 6 },
   caseDesc: { fontSize: 11, color: "#475569", lineHeight: 1.6, marginBottom: 6 },
   caseLink: {
-    fontSize: 9, color: "#374151", letterSpacing: 1.5,
+    display: "inline-block",
+    fontSize: 9,
+    fontWeight: 700,
+    letterSpacing: 1.8,
+    color: "#d97706",
     textDecoration: "none",
+    padding: "3px 10px",
+    border: "1px solid rgba(245,158,11,0.4)",
+    background: "rgba(245,158,11,0.12)",
+    transition: "all 0.2s ease",
+    cursor: "pointer",
   },
   summaryBox: {
     padding: "24px", background: "#0a0a0a",
