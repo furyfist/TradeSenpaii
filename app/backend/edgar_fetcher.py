@@ -8,10 +8,26 @@ Highlights sentences that match LM risk signals.
 
 import re
 import requests
+import time
 import html
 import pandas as pd
 from pathlib import Path
 from typing import Optional
+
+def edgar_get(url: str, timeout: int = 15) -> requests.Response:
+    """Requests wrapper with 3 retries for EDGAR's flaky DNS."""
+    for attempt in range(3):
+        try:
+            r = requests.get(url, headers=EDGAR_HEADERS, timeout=timeout)
+            r.raise_for_status()
+            return r
+        except requests.exceptions.ConnectionError as e:
+            print(f"[WARN] EDGAR connection failed attempt {attempt+1}/3: {e}")
+            time.sleep(2)
+        except requests.exceptions.Timeout:
+            print(f"[WARN] EDGAR timeout attempt {attempt+1}/3")
+            time.sleep(2)
+    raise ConnectionError(f"[ERROR] EDGAR unreachable after 3 attempts: {url}")
 
 EDGAR_HEADERS = {"User-Agent": "TradeSenpai dev@tradesenpai.com"}
 BASE_URL      = "https://data.sec.gov"
@@ -67,8 +83,7 @@ def get_recent_filings(ticker: str, form_types: list = None) -> list[dict]:
         raise ValueError(f"Unknown ticker: {ticker}")
 
     url = f"{BASE_URL}/submissions/CIK{cik}.json"
-    r   = requests.get(url, headers=EDGAR_HEADERS, timeout=10)
-    r.raise_for_status()
+    r   = edgar_get(url, timeout=10)
 
     data    = r.json()
     recent  = data["filings"]["recent"]
@@ -96,8 +111,7 @@ def get_filing_index(accession: str, cik: str) -> list[dict]:
     acc_clean = accession.replace("-", "")
     url = f"{BASE_URL}/Archives/edgar/data/{cik}/{acc_clean}/{accession}-index.json"
 
-    r = requests.get(url, headers=EDGAR_HEADERS, timeout=10)
-    r.raise_for_status()
+    r = edgar_get(url, timeout=10)
 
     data  = r.json()
     files = data.get("directory", {}).get("item", [])
@@ -140,8 +154,7 @@ def fetch_filing_text(accession: str, cik: str, doc_name: str) -> str:
     cik_int   = str(int(cik))
     url = f"{ARCHIVES_URL}/Archives/edgar/data/{cik_int}/{acc_clean}/{doc_name}"
 
-    r = requests.get(url, headers=EDGAR_HEADERS, timeout=30)
-    r.raise_for_status()
+    r = edgar_get(url, timeout=30)
 
     # strip HTML tags
     text = re.sub(r"<[^>]+>", " ", r.text)
@@ -283,7 +296,8 @@ def get_highlighted_filing(
         url = f"{ARCHIVES_URL}/Archives/edgar/data/{cik_int}/{acc_clean}/{doc_name}"
         print(f"[INFO] Trying: {url}")
         try:
-            r = requests.get(url, headers=EDGAR_HEADERS, timeout=30)
+            r = edgar_get(url, timeout=30)
+            r.encoding = "utf-8"
             if r.status_code == 200 and len(r.text) > 5000:
                 full_text = r.text
                 print(f"[INFO] Success: {doc_name} ({len(full_text):,} chars)")
