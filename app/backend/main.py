@@ -506,7 +506,7 @@ def anomaly_history(ticker: str = Query(default=None)):
     """
     try:
         # anomaly_results.csv sits at project root (4 levels up from main.py)
-        csv_path = Path(__file__).resolve().parent.parent.parent.parent / "anomaly_results.csv"
+        csv_path = Path(__file__).resolve().parent.parent.parent / "anomaly_results.csv"
  
         if not csv_path.exists():
             raise HTTPException(
@@ -578,7 +578,7 @@ def evidence_cases():
     Used by RiskTimeline.jsx for the 'Filing Warned Us Early' panel.
     """
     try:
-        csv_path = Path(__file__).resolve().parent.parent.parent.parent / "evidence_cases.csv"
+        csv_path = Path(__file__).resolve().parent.parent.parent / "evidence_cases.csv"
  
         if not csv_path.exists():
             raise HTTPException(

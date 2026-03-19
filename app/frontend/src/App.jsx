@@ -12,7 +12,6 @@ import LoginPage from "./components/LoginPage";
 import { supabase } from "./lib/supabase";
 import RiskTimeline from "./components/RiskTimeline";
 
-
 import {
   fetchPrediction, fetchPriceHistory,
   fetchSentimentHistory, fetchModelInfo, fetchTickers
@@ -109,9 +108,11 @@ export default function App() {
           })}>
             ▸ HYPOTHESIS ENGINE
           </NavLink>
-          <a href="/timeline" style={styles.navLink}>
+          <NavLink to="/timeline" style={({ isActive }) => ({
+            ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
+          })}>
             ▸ RISK TIMELINE
-          </a>
+          </NavLink>
         </nav>
         <div style={styles.headerRight}>
           {lastUpdated && <span style={styles.lastUpdated}>LAST SYNC · {lastUpdated}</span>}
