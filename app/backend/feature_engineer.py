@@ -12,7 +12,7 @@ def fetch_recent_prices(ticker: str = "KO", days: int = 800) -> pd.DataFrame:
     start = end - timedelta(days=days)
 
     for attempt in range(3):
-        df = yf.download(ticker, start=start, end=end, progress=False)
+        df = yf.download(ticker, start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"), progress=False)
         print(f"[DEBUG] yfinance returned {len(df)} rows for {ticker}")
         if len(df) > 0:
             break
