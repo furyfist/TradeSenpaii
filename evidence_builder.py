@@ -14,8 +14,6 @@ Usage:
     python evidence_builder.py                  # all 6 tickers
     python evidence_builder.py --ticker JNJ     # single ticker
     python evidence_builder.py --export         # save to evidence_cases.csv
-
-Place at: TradeSenpai/evidence_builder.py (project root)
 """
 
 import argparse
@@ -34,9 +32,7 @@ WINDOWS = [30, 60, 90]
 TARGET_RISK = ["HIGH", "ELEVATED"]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 1.  Load data
-# ══════════════════════════════════════════════════════════════════════════════
+#  Load data
 
 def load_price_data(ticker: str) -> pd.DataFrame:
     path = DATA_ROOT / ticker / "merged_dataset.csv"
@@ -58,9 +54,7 @@ def load_anomaly_results() -> pd.DataFrame:
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 2.  Price impact calculator
-# ══════════════════════════════════════════════════════════════════════════════
+#  Price impact calculator
 
 def get_price_at_or_after(price_df: pd.DataFrame, target_date: pd.Timestamp) -> float | None:
     """Gets closing price on or after target_date (handles weekends/holidays)."""
@@ -109,9 +103,7 @@ def compute_price_impact(
     return result
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 3.  Signal direction check
-# ══════════════════════════════════════════════════════════════════════════════
+# Signal direction check
 
 def signal_was_bearish(anomalies_str: str) -> bool:
     """
@@ -130,9 +122,7 @@ def signal_was_bearish(anomalies_str: str) -> bool:
     return any(s in anomalies_str for s in bearish_signals)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 4.  Full evidence analysis for one ticker
-# ══════════════════════════════════════════════════════════════════════════════
+#  Full evidence analysis for one ticker
 
 def analyze_ticker_evidence(
     ticker: str,
@@ -192,9 +182,7 @@ def analyze_ticker_evidence(
     return pd.DataFrame(records)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 5.  Print evidence cases
-# ══════════════════════════════════════════════════════════════════════════════
+# Print evidence cases
 
 def print_ticker_evidence(df: pd.DataFrame, ticker: str):
     if df.empty:
@@ -264,9 +252,7 @@ def print_signal_accuracy(all_dfs: list[pd.DataFrame]):
     print(f"{'═'*68}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 6.  Top 3 cases for README (the hero story)
-# ══════════════════════════════════════════════════════════════════════════════
+# Top 3 cases for README (the hero story)
 
 def print_hero_cases(all_dfs: list[pd.DataFrame]):
     combined = pd.concat(all_dfs, ignore_index=True)
@@ -292,9 +278,7 @@ def print_hero_cases(all_dfs: list[pd.DataFrame]):
     print(f"\n{'═'*68}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 7.  Entry point
-# ══════════════════════════════════════════════════════════════════════════════
+# Entry point
 
 def main():
     parser = argparse.ArgumentParser(description="TradeSenpai Evidence Builder")

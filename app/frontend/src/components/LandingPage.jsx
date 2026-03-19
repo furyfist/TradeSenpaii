@@ -55,7 +55,7 @@ export default function LandingPage() {
 
   return (
     <div style={s.page}>
-
+      
       {/* Ticker Tape */}
       <div style={s.tape}>
         <div style={{

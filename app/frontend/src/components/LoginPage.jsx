@@ -82,6 +82,7 @@ export default function LoginPage({ onLogin }) {
                 <div style={s.note}>
                     Supabase JWT · Admin role required · Session expires in 1 hour
                 </div>
+                
             </div>
         </div>
     );

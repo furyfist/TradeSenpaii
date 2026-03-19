@@ -18,8 +18,6 @@ Usage:
     python anomaly_detector.py --ticker AAPL    # single ticker
     python anomaly_detector.py --ticker JNJ --threshold 2.0
     python anomaly_detector.py --export         # save results to CSV
-
-Place at: TradeSenpai/anomaly_detector.py (project root)
 """
 
 import argparse
@@ -28,19 +26,19 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# ── Paths 
 ROOT      = Path(__file__).resolve().parent
 DATA_ROOT = ROOT / "stock-analysis" / "data" / "processed"
 
 TICKERS = ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# ── Config 
 MIN_WORDS       = 500    # ignore stub filings below this word count
 SPIKE_THRESHOLD = 1.5    # z-score threshold to flag as anomaly
 ROLLING_WINDOW  = 8      # number of prior filings to compute baseline
                          # 8 quarters = 2 years of history as baseline
 
-# ── Signals to monitor ────────────────────────────────────────────────────────
+# ── Signals to monitor 
 # Each entry: (column, label, direction)
 # direction: "up" = spike upward is bad, "down" = drop is bad
 SIGNALS = [
@@ -52,9 +50,7 @@ SIGNALS = [
 ]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 1.  Load + clean filing data
-# ══════════════════════════════════════════════════════════════════════════════
+# Load + clean filing data
 
 def load_filings(ticker: str) -> pd.DataFrame:
     """
@@ -83,9 +79,7 @@ def load_filings(ticker: str) -> pd.DataFrame:
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 2.  Compute rolling baseline + z-scores
-# ══════════════════════════════════════════════════════════════════════════════
+# Compute rolling baseline + z-scores
 
 def compute_zscores(df: pd.DataFrame, window: int = ROLLING_WINDOW) -> pd.DataFrame:
     """
@@ -117,9 +111,7 @@ def compute_zscores(df: pd.DataFrame, window: int = ROLLING_WINDOW) -> pd.DataFr
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 3.  Flag anomalies
-# ══════════════════════════════════════════════════════════════════════════════
+#  Flag anomalies
 
 def flag_anomalies(df: pd.DataFrame, threshold: float = SPIKE_THRESHOLD) -> pd.DataFrame:
     """
@@ -166,9 +158,7 @@ def flag_anomalies(df: pd.DataFrame, threshold: float = SPIKE_THRESHOLD) -> pd.D
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 4.  Quarter-over-quarter delta (the "what changed" story)
-# ══════════════════════════════════════════════════════════════════════════════
+# Quarter-over-quarter delta (the "what changed" story)
 
 def compute_qoq_deltas(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -188,9 +178,7 @@ def compute_qoq_deltas(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 5.  Full pipeline for one ticker
-# ══════════════════════════════════════════════════════════════════════════════
+# Full pipeline for one ticker
 
 def analyze_ticker(ticker: str, threshold: float = SPIKE_THRESHOLD) -> pd.DataFrame:
     print(f"\n[INFO] ── Analyzing {ticker} ──")
@@ -214,9 +202,7 @@ def analyze_ticker(ticker: str, threshold: float = SPIKE_THRESHOLD) -> pd.DataFr
     return df
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 6.  Print results
-# ══════════════════════════════════════════════════════════════════════════════
+# Print results
 
 def print_anomalies(df: pd.DataFrame, ticker: str, recent_only: bool = True):
     """
@@ -266,9 +252,7 @@ def print_summary(all_dfs: list[pd.DataFrame]):
     print("═" * 65)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 7.  Most interesting cases — for the "filing warned us early" story
-# ══════════════════════════════════════════════════════════════════════════════
+# Most interesting cases — for the "filing warned us early" story
 
 def find_evidence_cases(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
     """
@@ -315,9 +299,7 @@ def print_evidence_cases(df: pd.DataFrame, ticker: str):
               f"litigation={row['lm_litigious']:.0f}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 8.  Export
-# ══════════════════════════════════════════════════════════════════════════════
+# Export
 
 def export_results(all_dfs: list[pd.DataFrame]):
     combined = pd.concat(all_dfs, ignore_index=True)
@@ -341,9 +323,7 @@ def export_results(all_dfs: list[pd.DataFrame]):
           f"{len(export_df[export_df['anomaly_count']>0])} flagged")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 9.  Entry point
-# ══════════════════════════════════════════════════════════════════════════════
+# Entry point
 
 def main():
     parser = argparse.ArgumentParser(description="TradeSenpai SEC Anomaly Detector")

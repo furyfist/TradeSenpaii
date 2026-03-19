@@ -10,6 +10,8 @@ import LandingPage from "./components/LandingPage";
 import AdminPanel from "./components/AdminPanel";
 import LoginPage from "./components/LoginPage";
 import { supabase } from "./lib/supabase";
+import RiskTimeline from "./components/RiskTimeline";
+
 
 import {
   fetchPrediction, fetchPriceHistory,
@@ -107,6 +109,9 @@ export default function App() {
           })}>
             ▸ HYPOTHESIS ENGINE
           </NavLink>
+          <a href="/timeline" style={styles.navLink}>
+            ▸ RISK TIMELINE
+          </a>
         </nav>
         <div style={styles.headerRight}>
           {lastUpdated && <span style={styles.lastUpdated}>LAST SYNC · {lastUpdated}</span>}
@@ -131,6 +136,7 @@ export default function App() {
         } />
         <Route path="/hypothesis" element={<HypothesisPage />} />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/timeline" element={<RiskTimeline />} />
         <Route
           path="/ts-ops-7x9k"
           element={
