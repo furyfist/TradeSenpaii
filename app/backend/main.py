@@ -15,6 +15,8 @@ from fastapi.responses import StreamingResponse
 from auth import require_admin
 import json
 import os
+from pathlib import Path
+import ast
 load_dotenv()
 
 from models import (
@@ -495,6 +497,142 @@ def hypothesis_stream(request: Request, body: HypothesisRequest):
         }
     )
 
+@app.get("/anomaly-history")
+def anomaly_history(ticker: str = Query(default=None)):
+    """
+    Returns SEC filing anomaly data from anomaly_results.csv.
+    Optionally filter by ticker.
+    Used by RiskTimeline.jsx frontend component.
+    """
+    try:
+        # anomaly_results.csv sits at project root (4 levels up from main.py)
+        csv_path = Path(__file__).resolve().parent.parent.parent.parent / "anomaly_results.csv"
+ 
+        if not csv_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail="anomaly_results.csv not found. Run anomaly_detector.py --export first."
+            )
+ 
+        df = pd.read_csv(csv_path)
+        df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+ 
+        # parse anomalies column — stored as string representation of list
+        def parse_anomalies(val):
+            if pd.isna(val) or val == "[]" or val == "":
+                return []
+            try:
+                import ast
+                return ast.literal_eval(val)
+            except Exception:
+                return []
+ 
+        df["anomalies"] = df["anomalies"].apply(parse_anomalies)
+ 
+        # filter by ticker if provided
+        if ticker:
+            ticker = ticker.upper()
+            if ticker not in ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]:
+                raise HTTPException(status_code=400, detail=f"Unknown ticker: {ticker}")
+            df = df[df["ticker"] == ticker]
+ 
+        # build response grouped by ticker
+        result = {}
+        for t in df["ticker"].unique():
+            t_df = df[df["ticker"] == t].copy()
+            result[t] = [
+                {
+                    "date":          row["date"],
+                    "form_type":     row["form_type"],
+                    "total_words":   int(row["total_words"]) if pd.notna(row["total_words"]) else 0,
+                    "sentiment":     round(float(row["lm_sentiment_score"]), 4) if pd.notna(row["lm_sentiment_score"]) else 0,
+                    "neg_pct":       round(float(row["lm_neg_pct"]), 4)         if pd.notna(row["lm_neg_pct"]) else 0,
+                    "uncertain_pct": round(float(row["lm_uncertain_pct"]), 4)   if pd.notna(row["lm_uncertain_pct"]) else 0,
+                    "litigation":    round(float(row["lm_litigious"]), 4)       if pd.notna(row["lm_litigious"]) else 0,
+                    "risk_level":    row["risk_level"],
+                    "anomaly_count": int(row["anomaly_count"]),
+                    "signals":       row["anomalies"],
+                }
+                for _, row in t_df.iterrows()
+            ]
+ 
+        return {
+            "tickers":         list(result.keys()),
+            "total_filings":   len(df),
+            "total_flagged":   int((df["risk_level"] != "NORMAL").sum()),
+            "data":            result,
+        }
+ 
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
+ 
+ 
+@app.get("/evidence-cases")
+def evidence_cases():
+    """
+    Returns the top hero evidence cases from evidence_cases.csv.
+    Used by RiskTimeline.jsx for the 'Filing Warned Us Early' panel.
+    """
+    try:
+        csv_path = Path(__file__).resolve().parent.parent.parent.parent / "evidence_cases.csv"
+ 
+        if not csv_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail="evidence_cases.csv not found. Run evidence_builder.py --export first."
+            )
+ 
+        df = pd.read_csv(csv_path)
+        df["filing_date"] = pd.to_datetime(df["filing_date"]).dt.strftime("%Y-%m-%d")
+ 
+        # parse anomalies column
+        def parse_anomalies(val):
+            if pd.isna(val) or val == "[]":
+                return []
+            try:
+                import ast
+                return ast.literal_eval(str(val))
+            except Exception:
+                return []
+ 
+        df["anomalies"] = df["anomalies"].apply(parse_anomalies)
+ 
+        # hero cases: bearish signals that preceded >5% drops in 90 days
+        heroes = df[
+            (df["signal_bearish"] == True) &
+            (df["return_90d"] < -5)
+        ].copy()
+ 
+        heroes["abs_90d"] = heroes["return_90d"].abs()
+        heroes = heroes.sort_values("abs_90d", ascending=False).head(5)
+ 
+        hero_list = [
+            {
+                "ticker":      row["ticker"],
+                "filing_date": row["filing_date"],
+                "form_type":   row["form_type"],
+                "risk_level":  row["risk_level"],
+                "signals":     row["anomalies"],
+                "base_price":  round(float(row["base_price"]), 2) if pd.notna(row["base_price"]) else None,
+                "return_30d":  round(float(row["return_30d"]), 2) if pd.notna(row["return_30d"]) else None,
+                "return_60d":  round(float(row["return_60d"]), 2) if pd.notna(row["return_60d"]) else None,
+                "return_90d":  round(float(row["return_90d"]), 2) if pd.notna(row["return_90d"]) else None,
+            }
+            for _, row in heroes.iterrows()
+        ]
+ 
+        return {"hero_cases": hero_list}
+ 
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 @app.get("/tickers")
 def get_tickers():
