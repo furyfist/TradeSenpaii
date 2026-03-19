@@ -1,0 +1,77 @@
+ticker,filing_date,form_type,risk_level,anomaly_count,anomalies,signal_bearish,base_price,return_30d,price_30d,return_60d,price_60d,return_90d,price_90d,signal_correct_30d
+KO,1996-11-14,10-Q,HIGH,3,"['Uncertainty', 'Sentiment Score', 'Positive Language']",True,12.22,2.17,12.48,13.95,13.92,13.0,13.8,False
+KO,1997-11-13,10-Q,HIGH,4,"['Uncertainty', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,13.58,15.7,15.72,20.18,16.33,33.65,18.16,False
+KO,1998-03-09,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,17.2,3.14,17.74,9.7,18.87,20.63,20.75,False
+KO,1998-11-12,10-Q,ELEVATED,2,"['Uncertainty', 'Sentiment Score']",True,16.83,-2.19,16.46,-9.65,15.21,-6.21,15.79,True
+KO,2000-07-27,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,14.7,-9.72,13.27,-9.02,13.37,4.45,15.35,True
+KO,2003-08-13,10-Q,ELEVATED,2,"['Uncertainty', 'Sentiment Score']",True,11.44,-2.8,11.12,6.16,12.14,13.65,13.0,True
+KO,2005-08-01,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,11.79,0.16,11.8,-2.6,11.48,-2.56,11.48,False
+KO,2005-10-27,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,11.4,-0.87,11.3,-1.75,11.2,1.26,11.54,True
+JNJ,1997-08-08,10-Q,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,14.59,1.96,14.87,-0.15,14.56,10.94,16.18,False
+JNJ,1997-11-07,10-Q,HIGH,3,"['Negative Language', 'Sentiment Score', 'Positive Language']",True,14.76,12.32,16.58,15.58,17.06,27.52,18.83,False
+JNJ,1998-05-11,10-Q,HIGH,4,"['Negative Language', 'Uncertainty', 'Sentiment Score', 'Positive Language']",True,17.43,9.29,19.05,7.23,18.69,9.47,19.08,False
+JNJ,1998-08-07,10-Q,ELEVATED,2,"['Negative Language', 'Uncertainty']",True,18.94,4.79,19.85,7.76,20.41,7.01,20.27,False
+JNJ,2004-11-03,10-Q,HIGH,4,"['Uncertainty', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,32.49,7.23,34.83,9.35,35.52,14.16,37.09,False
+JNJ,2005-11-07,10-Q,HIGH,5,"['Negative Language', 'Uncertainty', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,34.21,-0.54,34.03,-6.1,32.13,-0.47,34.05,True
+JNJ,2006-03-14,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,33.38,-1.26,32.96,4.47,34.88,4.76,34.97,True
+JNJ,2007-02-21,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,37.25,-5.16,35.33,-2.91,36.16,-4.02,35.75,True
+JNJ,2008-05-07,10-Q,ELEVATED,2,"['Litigation Count', 'Sentiment Score']",True,39.58,-2.74,38.5,2.5,40.57,5.45,41.74,True
+JNJ,2008-08-04,10-Q,ELEVATED,2,"['Litigation Count', 'Sentiment Score']",True,41.09,1.85,41.85,-6.34,38.49,-14.96,34.95,False
+JNJ,2008-11-04,10-Q,ELEVATED,2,"['Litigation Count', 'Sentiment Score']",True,37.11,-4.24,35.54,-6.01,34.88,-16.68,30.92,True
+JNJ,2013-02-22,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,53.44,6.37,56.85,15.42,61.68,14.39,61.13,False
+JNJ,2014-02-21,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,66.04,7.54,71.02,9.97,72.62,16.49,76.92,False
+JNJ,2015-02-24,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,74.66,-0.54,74.26,2.88,76.81,-1.53,73.52,True
+JNJ,2017-02-27,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,96.04,1.58,97.57,4.18,100.06,8.99,104.68,False
+JNJ,2020-07-24,10-Q,ELEVATED,2,"['Litigation Count', 'Sentiment Score']",True,126.78,0.98,128.03,-1.92,124.35,0.91,127.93,False
+PG,1998-11-05,10-Q,ELEVATED,2,"['Litigation Count', 'Sentiment Score']",True,22.07,-2.24,21.57,-0.16,22.03,4.19,22.99,True
+PG,1999-02-05,10-Q,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,21.04,12.52,23.68,8.42,22.81,1.7,21.4,False
+PG,1999-04-23,10-Q,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,22.5,7.8,24.26,0.14,22.53,10.06,24.77,False
+PG,1999-11-05,10-Q,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,26.51,1.65,26.94,-6.59,24.76,-43.29,15.03,False
+PG,2000-04-28,10-Q,HIGH,4,"['Negative Language', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,15.07,-5.65,14.22,2.08,15.38,6.81,16.1,True
+PG,2000-11-02,10-Q,ELEVATED,2,"['Negative Language', 'Sentiment Score']",True,17.32,5.06,18.2,6.26,18.4,-3.94,16.64,False
+PG,2001-05-09,10-Q,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,17.06,-5.8,16.07,6.67,18.2,1.78,17.36,True
+PG,2002-09-12,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,24.29,-2.19,23.75,-5.33,22.99,-5.78,22.88,True
+PG,2003-09-11,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,24.85,4.43,25.95,5.92,26.32,9.32,27.16,False
+PG,2007-08-28,10-K,ELEVATED,2,"['Uncertainty', 'Sentiment Score']",True,38.05,10.36,41.99,12.24,42.71,12.6,42.84,False
+PG,2008-08-28,10-K,HIGH,3,"['Uncertainty', 'Sentiment Score', 'Positive Language']",True,42.69,-16.12,35.8,-10.59,38.17,-13.43,36.95,True
+PG,2009-02-02,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,32.32,-9.56,29.23,-4.14,30.98,-1.11,31.96,True
+PG,2009-05-01,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,30.42,3.7,31.54,13.44,34.51,9.47,33.3,False
+PG,2011-08-10,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,38.55,4.55,40.3,8.91,41.98,12.24,43.26,False
+PG,2020-08-06,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,115.64,3.51,119.7,3.88,120.13,2.93,119.03,False
+PG,2021-08-06,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,126.24,1.05,127.56,1.5,128.12,12.6,142.14,False
+WMT,1997-06-10,10-Q,HIGH,3,"['Negative Language', 'Sentiment Score', 'Positive Language']",True,3.29,16.57,3.83,21.56,4.0,14.18,3.75,False
+WMT,1999-09-10,10-Q,ELEVATED,2,"['Litigation Count', 'Positive Language']",True,10.12,19.79,12.13,25.07,12.66,34.58,13.63,False
+WMT,1999-12-15,10-Q,HIGH,3,"['Uncertainty', 'Litigation Count', 'Positive Language']",True,14.04,-16.5,11.72,-27.76,10.14,-9.47,12.71,True
+WMT,2000-04-17,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,11.5,6.71,12.27,9.61,12.61,-8.35,10.54,False
+WMT,2002-04-15,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,12.9,-8.58,11.79,-10.18,11.58,-9.63,11.65,True
+WMT,2002-09-11,10-Q,ELEVATED,2,"['Uncertainty', 'Litigation Count']",True,11.68,5.74,12.35,-2.04,11.44,-9.32,10.59,False
+WMT,2003-04-15,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,11.97,-4.49,11.43,2.41,12.26,5.8,12.66,True
+WMT,2007-03-27,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,10.76,0.93,10.86,2.37,11.02,-3.7,10.37,False
+WMT,2008-03-31,10-K,HIGH,3,"['Uncertainty', 'Sentiment Score', 'Positive Language']",True,12.17,10.14,13.4,9.27,13.3,15.82,14.09,False
+WMT,2016-03-30,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,19.26,-2.77,18.72,5.56,20.33,7.99,20.79,True
+WMT,2017-03-31,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,20.76,6.55,22.12,6.16,22.04,14.7,23.81,False
+WMT,2021-03-19,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,41.2,7.88,44.45,6.69,43.95,8.26,44.6,False
+WMT,2022-03-18,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,46.19,4.5,48.27,-17.56,38.08,-10.46,41.36,False
+AAPL,1996-02-12,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,0.21,-15.86,0.18,-5.73,0.2,-19.82,0.17,True
+AAPL,1999-05-11,10-Q,ELEVATED,2,"['Uncertainty', 'Sentiment Score']",True,0.34,-2.37,0.33,22.35,0.41,71.93,0.58,True
+AAPL,2001-02-12,10-Q,HIGH,3,"['Negative Language', 'Sentiment Score', 'Positive Language']",True,0.29,16.16,0.34,21.8,0.36,14.23,0.34,False
+AAPL,2002-05-14,10-Q,ELEVATED,2,"['Negative Language', 'Litigation Count']",True,0.38,-35.38,0.25,-40.26,0.23,-41.94,0.22,True
+AAPL,2002-08-09,10-Q,HIGH,3,"['Negative Language', 'Litigation Count', 'Sentiment Score']",True,0.22,-1.0,0.22,12.6,0.25,0.53,0.23,True
+AAPL,2006-02-03,10-Q,HIGH,3,"['Negative Language', 'Litigation Count', 'Sentiment Score']",True,2.15,-10.94,1.92,-0.32,2.15,-19.82,1.73,True
+AAPL,2006-05-05,10-Q,HIGH,4,"['Negative Language', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,2.15,-20.43,1.71,-6.55,2.01,3.21,2.22,True
+AAPL,2006-12-29,10-K,HIGH,4,"['Negative Language', 'Litigation Count', 'Sentiment Score', 'Positive Language']",True,2.54,0.54,2.56,10.5,2.81,28.17,3.26,False
+AAPL,2007-02-02,10-Q,ELEVATED,2,"['Negative Language', 'Sentiment Score']",True,2.54,7.53,2.73,17.37,2.98,38.64,3.52,False
+AAPL,2008-11-05,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,3.1,-13.43,2.68,-9.99,2.79,-1.72,3.04,True
+AAPL,2009-10-27,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,5.91,0.22,5.93,2.89,6.08,13.0,6.68,False
+AAPL,2010-10-27,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,9.22,3.88,9.58,9.62,10.11,15.57,10.66,False
+AAPL,2011-10-26,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,12.0,-2.48,11.71,4.95,12.6,32.47,15.9,True
+AAPL,2012-10-31,10-K,HIGH,3,"['Uncertainty', 'Sentiment Score', 'Positive Language']",True,17.91,-10.62,16.01,-22.67,13.85,-27.3,13.02,True
+AAPL,2013-10-30,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,16.17,7.41,17.37,-2.94,15.7,3.44,16.73,False
+AAPL,2014-10-27,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,23.18,9.04,25.28,7.95,25.02,21.96,28.27,False
+AAPL,2015-10-28,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,26.75,-2.18,26.17,-15.81,22.52,-14.39,22.9,True
+AAPL,2016-10-26,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,26.48,-2.5,25.82,4.32,27.63,21.39,32.15,True
+AAPL,2019-10-31,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,59.79,10.94,66.33,30.77,78.18,0.32,59.98,False
+AAPL,2022-10-28,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,153.03,-7.07,142.21,-7.41,141.69,-4.34,146.38,True
+AAPL,2025-10-31,10-K,ELEVATED,2,"['Uncertainty', 'Positive Language']",True,269.86,1.48,273.85,-4.38,258.04,,,False
+GOOGL,2021-02-03,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,102.17,-1.82,100.31,14.31,116.79,18.94,121.53,True
+GOOGL,2022-02-02,10-K,ELEVATED,2,"['Sentiment Score', 'Positive Language']",True,146.89,-9.57,132.84,-22.9,113.25,-28.11,105.59,True
