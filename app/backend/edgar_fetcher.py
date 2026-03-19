@@ -14,6 +14,7 @@ from typing import Optional
 
 EDGAR_HEADERS = {"User-Agent": "TradeSenpai dev@tradesenpai.com"}
 BASE_URL      = "https://data.sec.gov"
+ARCHIVES_URL  = "https://www.sec.gov"   # Archives live on www, not data
 
 TICKER_CIK = {
     "AAPL":  "0000320193",
@@ -76,10 +77,11 @@ def get_recent_filings(ticker: str, form_types: list = None) -> list[dict]:
         if form not in form_types:
             continue
         filings.append({
-            "ticker":    ticker,
-            "form":      form,
-            "date":      recent["filingDate"][i],
-            "accession": recent["accessionNumber"][i],
+            "ticker":          ticker,
+            "form":            form,
+            "date":            recent["filingDate"][i],
+            "accession":       recent["accessionNumber"][i],
+            "primaryDocument": recent.get("primaryDocument", [None])[i] or "",
         })
 
     return filings[:20]   # last 20 qualifying filings
@@ -91,7 +93,7 @@ def get_filing_index(accession: str, cik: str) -> list[dict]:
     Needed to find the actual .htm/.txt document.
     """
     acc_clean = accession.replace("-", "")
-    url = f"{BASE_URL}/Archives/edgar/data/{int(cik)}/{acc_clean}/{accession}-index.json"
+    url = f"{BASE_URL}/Archives/edgar/data/{cik}/{acc_clean}/{accession}-index.json"
 
     r = requests.get(url, headers=EDGAR_HEADERS, timeout=10)
     r.raise_for_status()
@@ -134,7 +136,8 @@ def fetch_filing_text(accession: str, cik: str, doc_name: str) -> str:
     Fetches the raw HTML of a filing document and strips to plain text.
     """
     acc_clean = accession.replace("-", "")
-    url = f"{BASE_URL}/Archives/edgar/data/{int(cik)}/{acc_clean}/{doc_name}"
+    cik_int   = str(int(cik))
+    url = f"{ARCHIVES_URL}/Archives/edgar/data/{cik_int}/{acc_clean}/{doc_name}"
 
     r = requests.get(url, headers=EDGAR_HEADERS, timeout=30)
     r.raise_for_status()
@@ -240,18 +243,51 @@ def get_highlighted_filing(
 
     print(f"[INFO] Fetching filing {accession} for {ticker}...")
 
-    # get filing index
-    files       = get_filing_index(accession, cik)
-    primary_doc = find_primary_document(files)
+    # Get primaryDocument straight from submissions API (avoids broken index endpoint)
+    filings    = get_recent_filings(ticker)
+    filing_meta = next((f for f in filings if f["accession"] == accession), None)
 
-    if not primary_doc:
-        raise ValueError(f"Could not find primary document for {accession}")
+    # Build candidate document list — try primaryDocument first, then common fallbacks
+    acc_clean = accession.replace("-", "")
+    cik_int   = str(int(cik))
 
-    print(f"[INFO] Primary document: {primary_doc}")
+    candidate_docs = []
+    if filing_meta and filing_meta.get("primaryDocument"):
+        candidate_docs.append(filing_meta["primaryDocument"])
 
-    # fetch full text
-    full_text = fetch_filing_text(accession, cik, primary_doc)
-    print(f"[INFO] Fetched {len(full_text):,} chars")
+    # common fallback names EDGAR uses
+    candidate_docs += [
+        "form10x.htm", "form10k.htm", "form10q.htm",
+        "form10-k.htm", "form10-q.htm",
+        f"{ticker.lower()}-{accession.split('-')[2][:4]}.htm",
+    ]
+
+    full_text = None
+    for doc_name in candidate_docs:
+        url = f"{ARCHIVES_URL}/Archives/edgar/data/{cik_int}/{acc_clean}/{doc_name}"
+        print(f"[INFO] Trying: {url}")
+        try:
+            r = requests.get(url, headers=EDGAR_HEADERS, timeout=30)
+            if r.status_code == 200 and len(r.text) > 5000:
+                full_text = r.text
+                print(f"[INFO] Success: {doc_name} ({len(full_text):,} chars)")
+                break
+        except Exception as e:
+            print(f"[WARN] Failed {doc_name}: {e}")
+            continue
+
+    if not full_text:
+        raise ValueError(
+            f"Could not fetch filing {accession} for {ticker}. "
+            f"Tried: {candidate_docs}"
+        )
+
+    # strip HTML + clean
+    full_text = re.sub(r"<[^>]+>", " ", full_text)
+    full_text = re.sub(r"\s+", " ", full_text)
+    full_text = re.sub(r"Table of Contents", "", full_text, flags=re.IGNORECASE)
+    full_text = full_text.strip()
+    print(f"[INFO] Final text: {len(full_text):,} chars")
 
     # extract sections
     sections_out = []

@@ -665,8 +665,9 @@ def filing_viewer(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Internal server error.")
+        tb = traceback.format_exc()
+        print(tb)
+        raise HTTPException(status_code=500, detail=str(e) + " || " + tb[-300:])
 
 @app.get("/tickers")
 def get_tickers():
