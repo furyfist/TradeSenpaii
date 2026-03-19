@@ -8,6 +8,7 @@ Highlights sentences that match LM risk signals.
 
 import re
 import requests
+import html
 import pandas as pd
 from pathlib import Path
 from typing import Optional
@@ -144,6 +145,7 @@ def fetch_filing_text(accession: str, cik: str, doc_name: str) -> str:
 
     # strip HTML tags
     text = re.sub(r"<[^>]+>", " ", r.text)
+    text = html.unescape(text)
     # collapse whitespace
     text = re.sub(r"\s+", " ", text)
     # remove page headers/footers noise
@@ -155,27 +157,41 @@ def fetch_filing_text(accession: str, cik: str, doc_name: str) -> str:
 def extract_section(text: str, section_name: str, max_chars: int = 8000) -> str:
     """
     Extracts a named section from filing text.
-    Looks for the section header and returns text until the next major section.
+    Skips TOC references by requiring minimum content length after header.
     """
-    # build pattern to find section header
     pattern = re.compile(
         rf"(?i)(item\s+\d+[a-z]?\s*[.\-:–]?\s*{re.escape(section_name)})",
         re.IGNORECASE
     )
 
-    match = pattern.search(text)
-    if not match:
+    # find ALL matches — TOC entries appear first, real section appears later
+    matches = list(pattern.finditer(text))
+
+    if not matches:
         return ""
 
-    start = match.start()
-    # find the next item section as end boundary
-    next_item = re.search(
-        r"(?i)item\s+\d+[a-z]?\s*[.\-:–]",
-        text[start + 100:]   # skip current header
-    )
-    end = start + 100 + next_item.start() if next_item else start + max_chars
+    # pick the match that has substantial content after it
+    # TOC entries have <200 chars before the next item reference
+    # real sections have thousands of chars
+    for match in matches:
+        start = match.start()
 
-    return text[start:min(end, start + max_chars)].strip()
+        next_item = re.search(
+            r"(?i)item\s+\d+[a-z]?\s*[.\-:–]",
+            text[start + 100:]
+        )
+        end = start + 100 + next_item.start() if next_item else start + max_chars
+
+        section_text = text[start:min(end, start + max_chars)].strip()
+
+        # skip if content is too short — likely a TOC entry
+        if len(section_text) > 500:
+            return section_text
+
+    # fallback — return last match
+    match  = matches[-1]
+    start  = match.start()
+    return text[start:start + max_chars].strip()
 
 
 def split_into_sentences(text: str) -> list[str]:
@@ -284,6 +300,7 @@ def get_highlighted_filing(
 
     # strip HTML + clean
     full_text = re.sub(r"<[^>]+>", " ", full_text)
+    full_text = html.unescape(full_text)
     full_text = re.sub(r"\s+", " ", full_text)
     full_text = re.sub(r"Table of Contents", "", full_text, flags=re.IGNORECASE)
     full_text = full_text.strip()
