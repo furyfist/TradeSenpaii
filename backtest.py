@@ -1,6 +1,6 @@
 """
 TradeSenpai — Backtesting Engine
-
+=================================
 Runs trained transformer models on historical merged_dataset.csv data.
 Logs predictions + actual outcomes to Supabase prediction_history table.
 
@@ -9,6 +9,8 @@ Usage:
     python backtest.py --ticker AAPL      # single ticker
     python backtest.py --days 120         # extend backtest window
     python backtest.py --dry-run          # print results, skip Supabase logging
+
+Place this file at: TradeSenpai/backtest.py (project root)
 """
 
 import os
@@ -23,15 +25,16 @@ from pathlib import Path
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-# ── Load env 
+# ── Load env ──────────────────────────────────────────────────────────────────
 load_dotenv("app/backend/.env")
 
-# ── Paths (all relative to project root) 
+# ── Paths (all relative to project root) ──────────────────────────────────────
 ROOT        = Path(__file__).resolve().parent
 DATA_ROOT   = ROOT / "stock-analysis" / "data" / "processed"
 MODEL_DIR   = ROOT / "app" / "backend" / "model"
 
 TICKERS = ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]
+
 
 # Model definition (must match predictor.py exactly)
 
@@ -79,7 +82,9 @@ class StockTransformer(nn.Module):
         x = x[:, -1, :]
         return self.classifier(x)
 
+
 # Feature preparation
+# CSV has 48 cols. Model needs 56. We compute the 8 missing derived cols.
 
 def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -134,6 +139,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+
 # Model loader (mirrors predictor.py _load_model logic)
 
 def load_model(ticker: str) -> dict:
@@ -164,7 +170,6 @@ def load_model(ticker: str) -> dict:
         "scaler_scale": np.array(checkpoint["scaler_scale"]),
         "cv_accuracy":  checkpoint["cv_accuracy"],
     }
-
 
 
 # Single prediction from a feature window
@@ -203,6 +208,7 @@ def predict_window(state: dict, window_df: pd.DataFrame) -> tuple[str, float]:
     prediction = "UP" if pred_class == 1 else "DOWN"
 
     return prediction, round(confidence, 4)
+
 
 # Core backtest loop for one ticker
 
@@ -283,10 +289,17 @@ def backtest_ticker(ticker: str, days: int = 60) -> list[dict]:
 # Supabase logging
 
 def get_db_connection():
+    import time
     db_url = os.getenv("SUPABASE_DB_URL")
     if not db_url:
         raise ValueError("[ERROR] SUPABASE_DB_URL not set in .env")
-    return psycopg2.connect(db_url)
+    for attempt in range(5):
+        try:
+            return psycopg2.connect(db_url, connect_timeout=30)
+        except Exception as e:
+            print(f"[WARN] DB connection attempt {attempt+1}/5 failed: {e}")
+            time.sleep(3 * (attempt + 1))
+    raise ConnectionError("[ERROR] Could not connect to Supabase after 5 attempts")
 
 
 def log_results_to_supabase(results: list[dict]) -> tuple[int, int]:
@@ -341,7 +354,8 @@ def log_results_to_supabase(results: list[dict]) -> tuple[int, int]:
     return inserted, skipped
 
 
-# 7.  Summary printer
+# Summary printer
+
 def print_summary(all_results: list[dict]):
     if not all_results:
         print("\n[INFO] No results to summarize.")
@@ -387,7 +401,7 @@ def print_summary(all_results: list[dict]):
     print("═" * 55)
 
 
-#  Entry point
+# Entry point
 
 def main():
     parser = argparse.ArgumentParser(description="TradeSenpai Backtesting Engine")
