@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 import ast
+from edgar_fetcher import get_recent_filings, get_highlighted_filing
 load_dotenv()
 
 from models import (
@@ -629,6 +630,39 @@ def evidence_cases():
  
     except HTTPException:
         raise
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
+
+@app.get("/filing-list")
+def filing_list(ticker: str = Query(default="JNJ")):
+    """Returns list of recent 10-K/10-Q filings for a ticker."""
+    ticker = validate_ticker(ticker)
+    try:
+        filings = get_recent_filings(ticker)
+        return {"ticker": ticker, "filings": filings}
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
+
+
+@app.get("/filing-viewer")
+def filing_viewer(
+    ticker:    str = Query(default="JNJ"),
+    accession: str = Query(...)
+):
+    """
+    Fetches and highlights a specific SEC filing.
+    accession format: 0000200406-26-000016
+    """
+    ticker = validate_ticker(ticker)
+    try:
+        result = get_highlighted_filing(ticker, accession)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         import traceback
         print(traceback.format_exc())
