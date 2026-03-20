@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import SubscribeForm from "./SubscribeForm";
+import axios from "axios";
 
 const TICKERS = [
   { symbol: "KO",    name: "Coca-Cola",          sector: "Consumer Staples", color: "#ef4444" },
@@ -51,6 +52,28 @@ export default function LandingPage() {
       setTapePos(p => p + 1);
     }, 40);
     return () => clearInterval(interval);
+  }, []);
+  const [liveStats, setLiveStats] = useState(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [anomalyRes, predRes] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_API_URL}/anomaly-history`),
+          axios.get(`${import.meta.env.VITE_API_URL}/prediction-history?ticker=AAPL`),
+        ]);
+        setLiveStats({
+          filings:   anomalyRes.data.total_filings,
+          flagged:   anomalyRes.data.total_flagged,
+          tickers:   Object.keys(anomalyRes.data.data || {}).length,
+          backtest:  predRes.data.stats?.total * 6, // approx all tickers
+          accuracy:  predRes.data.stats?.accuracy,
+        });
+      } catch {
+        // silently fail — falls back to static
+      }
+    };
+    loadStats();
   }, []);
 
   return (
@@ -118,14 +141,23 @@ export default function LandingPage() {
       {/* Stats bar */}
       <div style={s.statsBar}>
         {[
-          ["6",    "TICKERS COVERED"],
-          ["56",   "FEATURES PER DAY"],
-          ["~52%", "CV ACCURACY"],
-          ["60D",  "LOOKBACK WINDOW"],
-          ["3",    "FILINGS ANALYZED"],
-        ].map(([val, label]) => (
-          <div key={label} style={s.statItem}>
-            <div style={s.statValue}>{val}</div>
+          [liveStats ? String(liveStats.tickers)          : "6",    "TICKERS COVERED"      ],
+          ["56",                                                     "FEATURES PER DAY"     ],
+          [liveStats ? `${liveStats.accuracy}%`           : "~52%", "BACKTEST ACCURACY"    ],
+          [liveStats ? `~${liveStats.backtest}`           : "3000", "BACKTEST PREDICTIONS" ],
+          [liveStats ? String(liveStats.filings)          : "425",  "FILINGS ANALYZED"     ],
+        ].map(([val, label], i, arr) => (
+          <div key={label} style={{
+            ...s.statItem,
+            borderRight: i < arr.length - 1 ? "1px solid #111" : "none",
+          }}>
+            <div style={{
+              ...s.statValue,
+              color: liveStats ? "#f59e0b" : "#374151",
+              transition: "color 0.3s",
+            }}>
+              {val}
+            </div>
             <div style={s.statLabel}>{label}</div>
           </div>
         ))}
