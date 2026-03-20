@@ -244,6 +244,10 @@ def get_accuracy_stats() -> dict:
             )
             rows = cur.fetchall()
 
+def get_db_connection():
+    import psycopg2, os
+    return psycopg2.connect(os.getenv("SUPABASE_DB_URL"))
+
     return {
         r["ticker"]: {
             "total":    r["total"],

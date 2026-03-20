@@ -13,6 +13,7 @@ import { supabase } from "./lib/supabase";
 import RiskTimeline from "./components/RiskTimeline";
 import FilingViewer from "./components/FilingViewer";
 import LearnPage from "./components/LearnPage";
+import PredictionChart from "./components/PredictionChart";
 import {
   fetchPrediction, fetchPriceHistory,
   fetchSentimentHistory, fetchModelInfo, fetchTickers
@@ -91,7 +92,7 @@ export default function App() {
         <div style={styles.logo}>
           <span style={styles.logoText}>TRADE</span>
           <span style={styles.logoAccent}>SENPAI</span>
-          <span style={styles.logoBadge}>V3</span>
+          <span style={styles.logoBadge}>v5</span>
         </div>
         <nav style={styles.nav}>
           <NavLink to="/" end style={({ isActive }) => ({
@@ -124,6 +125,11 @@ export default function App() {
           })}>
             ▸ FILING VIEWER
           </NavLink>
+          <NavLink to="/backtest" style={({ isActive }) => ({
+            ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
+          })}>
+            ▸ BACKTEST
+          </NavLink>
         </nav>
         <div style={styles.headerRight}>
           {lastUpdated && <span style={styles.lastUpdated}>LAST SYNC · {lastUpdated}</span>}
@@ -151,6 +157,7 @@ export default function App() {
         <Route path="/timeline" element={<RiskTimeline />} />
         <Route path="/filings" element={<FilingViewer />} />
         <Route path="/learn" element={<LearnPage />} />
+        <Route path="/backtest" element={<PredictionChart />} />
         <Route
           path="/ts-ops-7x9k"
           element={

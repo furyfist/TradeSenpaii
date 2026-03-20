@@ -78,7 +78,7 @@ export default function LandingPage() {
             <span style={s.heroTitleWhite}>TRADE</span>
             <span style={s.heroTitleGold}>SENPAI</span>
           </h1>
-          <div style={s.heroBadge}>V3</div>
+          <div style={s.heroBadge}>v5</div>
           <p style={s.heroDesc}>
             Surfaces SEC filing sentiment and technical signals so retail investors
             see what institutional analysts see. Educational simulation — not financial advice.
@@ -89,6 +89,9 @@ export default function LandingPage() {
             </button>
             <button style={s.ctaSecondary} onClick={() => navigate("/hypothesis")}>
               TRY HYPOTHESIS ENGINE
+            </button>
+            <button style={s.ctaSecondary} onClick={() => navigate("/backtest")}>
+              BACKTEST
             </button>
           </div>
           <div style={s.heroDisclaimer}>
@@ -185,6 +188,9 @@ export default function LandingPage() {
             <button style={s.ctaSecondary} onClick={() => navigate("/hypothesis")}>
               HYPOTHESIS ENGINE →
             </button>
+            <button style={s.ctaSecondary} onClick={() => navigate("/backtest")}>
+              BACKTEST →
+            </button>
           </div>
         </div>
       </section>
@@ -195,7 +201,7 @@ export default function LandingPage() {
       <footer style={s.footer}>
         <div style={s.footerLeft}>
           <span style={s.footerLogo}>TRADE<span style={{ color: "#f59e0b" }}>SENPAI</span></span>
-          <span style={s.footerVersion}>V3</span>
+          <span style={s.footerVersion}>v5</span>
         </div>
         <div style={s.footerRight}>
           Educational simulation only · Not financial advice · Model accuracy ~52%
