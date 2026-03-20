@@ -119,6 +119,11 @@ export default function App() {
           })}>
             ▸ LEARN
           </NavLink>
+          <NavLink to="/filings" style={({ isActive }) => ({
+            ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
+          })}>
+            ▸ FILING VIEWER
+          </NavLink>
         </nav>
         <div style={styles.headerRight}>
           {lastUpdated && <span style={styles.lastUpdated}>LAST SYNC · {lastUpdated}</span>}
