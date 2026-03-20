@@ -6,8 +6,8 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 > SEC filing risk intelligence platform, detecting linguistic anomalies in financial documents before the market reacts.
 
-*Version 5.0 — March 2026*
-📄 *[API Reference](Api_reference.md)* — Full endpoint documentation (V5 · March 2026)
+**Version 5.0** (March 2026) &nbsp;&bull;&nbsp; 📄 **[API Reference](Api_reference.md)**
+
 ---
 
 ## What Is This
