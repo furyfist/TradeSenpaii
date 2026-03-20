@@ -1,22 +1,13 @@
-
 # TradeSenpai
-
-> SEC filing risk intelligence platform — detecting linguistic anomalies in financial documents before the market reacts.
-
-**Version 5.0 — March 2026**
-
-📄 **[API Reference](Api_reference.md)** — Full endpoint documentation (V5 · March 2026)
-
----
-
-
-
 [![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat-square&logo=python)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://react.dev)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6-red?style=flat-square&logo=pytorch)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+> SEC filing risk intelligence platform, detecting linguistic anomalies in financial documents before the market reacts.
 
+*Version 5.0 — March 2026*
+📄 *[API Reference](Api_reference.md)* — Full endpoint documentation (V5 · March 2026)
 ---
 
 ## What Is This
