@@ -669,6 +669,84 @@ def filing_viewer(
         print(tb)
         raise HTTPException(status_code=500, detail=str(e) + " || " + tb[-300:])
 
+@app.get("/prediction-history")
+def prediction_history(ticker: str = Query(default="AAPL")):
+    """
+    Returns prediction history + price data for direction chart.
+    Joins prediction_history with price data from merged_dataset.csv
+    so frontend can overlay predictions on actual price.
+    """
+    ticker = validate_ticker(ticker)
+    try:
+        from alerts.alert_store import get_db_connection
+        conn = get_db_connection()
+        cur  = conn.cursor()
+
+        cur.execute("""
+            SELECT ticker, predicted_date, prediction, confidence,
+                   actual_direction, actual_return, correct
+            FROM prediction_history
+            WHERE ticker = %s
+            ORDER BY predicted_date ASC
+        """, (ticker,))
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        if not rows:
+            return {"ticker": ticker, "predictions": [], "stats": {}}
+
+        predictions = [
+            {
+                "date":             str(r[1]),
+                "prediction":       r[2],
+                "confidence":       float(r[3]),
+                "actual_direction": r[4],
+                "actual_return":    float(r[5]) if r[5] is not None else None,
+                "correct":          int(r[6])   if r[6] is not None else None,
+            }
+            for r in rows
+        ]
+
+        # compute stats
+        total   = len(predictions)
+        correct = sum(p["correct"] for p in predictions if p["correct"] is not None)
+        acc     = round(correct / total * 100, 2) if total > 0 else 0
+
+        # load actual price from merged_dataset.csv for chart overlay
+        csv_path = (
+            Path(__file__).resolve().parent.parent.parent
+            / "stock-analysis" / "data" / "processed"
+            / ticker / "merged_dataset.csv"
+        )
+        price_map = {}
+        if csv_path.exists():
+            df = pd.read_csv(csv_path, usecols=["date", "close"])
+            df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+            price_map  = dict(zip(df["date"], df["close"].round(2)))
+
+        # attach price to each prediction
+        for p in predictions:
+            p["close"] = price_map.get(p["date"])
+
+        return {
+            "ticker":      ticker,
+            "predictions": predictions,
+            "stats": {
+                "total":    total,
+                "correct":  correct,
+                "accuracy": acc,
+                "date_from": predictions[0]["date"],
+                "date_to":   predictions[-1]["date"],
+            },
+        }
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error.")
+        
 @app.get("/tickers")
 def get_tickers():
     return {
