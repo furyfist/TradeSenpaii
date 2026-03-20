@@ -12,7 +12,7 @@ import LoginPage from "./components/LoginPage";
 import { supabase } from "./lib/supabase";
 import RiskTimeline from "./components/RiskTimeline";
 import FilingViewer from "./components/FilingViewer";
-
+import LearnPage from "./components/LearnPage";
 import {
   fetchPrediction, fetchPriceHistory,
   fetchSentimentHistory, fetchModelInfo, fetchTickers
@@ -114,6 +114,11 @@ export default function App() {
           })}>
             ▸ RISK TIMELINE
           </NavLink>
+          <NavLink to="/learn" style={({ isActive }) => ({
+            ...styles.navLink, ...(isActive ? styles.navLinkActive : {})
+          })}>
+            ▸ LEARN
+          </NavLink>
         </nav>
         <div style={styles.headerRight}>
           {lastUpdated && <span style={styles.lastUpdated}>LAST SYNC · {lastUpdated}</span>}
@@ -140,6 +145,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route path="/timeline" element={<RiskTimeline />} />
         <Route path="/filings" element={<FilingViewer />} />
+        <Route path="/learn" element={<LearnPage />} />
         <Route
           path="/ts-ops-7x9k"
           element={
