@@ -678,8 +678,8 @@ def prediction_history(ticker: str = Query(default="AAPL")):
     """
     ticker = validate_ticker(ticker)
     try:
-        from alerts.alert_store import get_db_connection
-        conn = get_db_connection()
+        from alerts.alert_store import _conn
+        conn = _conn()
         cur  = conn.cursor()
 
         cur.execute("""
