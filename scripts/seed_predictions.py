@@ -66,8 +66,13 @@ def run():
             last_date  = pd.to_datetime(price_df["date"].iloc[-1])
             next_day   = last_date + timedelta(days=1)
 
-            sent_score = sentiment["lm_sentiment_score"]
+            sent_score = float(sentiment["lm_sentiment_score"])
             sent_label = "Positive" if sent_score > 0.5 else ("Negative" if sent_score < -0.5 else "Neutral")
+
+            top_signals = [
+                {k: (float(v) if isinstance(v, (int, float)) else v) for k, v in s.items()}
+                for s in result["top_signals"]
+            ]
 
             cur.execute("""
                 INSERT INTO seeded_predictions (
@@ -91,24 +96,25 @@ def run():
                 ticker,
                 meta["name"],
                 result["prediction"],
-                result["confidence"],
+                float(result["confidence"]),
                 str(next_day.date()),
                 str(last_date.date()),
-                json.dumps(result["top_signals"]),
+                json.dumps(top_signals),
                 sent_score,
                 sent_label,
-                result["cv_accuracy"],
+                float(result["cv_accuracy"]),
                 meta["sector"],
-                len(state["feature_cols"]),
-                state["sequence_len"],
+                int(len(state["feature_cols"])),
+                int(state["sequence_len"]),
                 "Transformer (d_model=128, 3 layers, 4 heads)",
                 state["trained_on"],
-                state["cv_accuracy"],
+                float(state["cv_accuracy"]),
             ))
 
             print(f"[{ticker}] {result['prediction']} ({result['confidence']:.2%}) — upserted")
 
         except Exception as e:
+            conn.rollback()
             print(f"[{ticker}] FAILED: {e}")
             import traceback; traceback.print_exc()
 
