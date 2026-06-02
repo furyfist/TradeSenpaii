@@ -13,6 +13,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Claude Code session data
+.claude/
+
 # Database dumps
 *.sql.gz
 *.dump
