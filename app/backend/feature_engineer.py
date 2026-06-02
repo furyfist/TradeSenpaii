@@ -1,32 +1,14 @@
 import numpy as np
 import pandas as pd
-import yfinance as yf
-from datetime import datetime, timedelta
-from sentiment_loader import load_latest_sentiment
+from pathlib import Path
 
+BASE_PATH = Path(__file__).resolve().parent.parent.parent / "stock-analysis" / "data" / "processed"
 
-import time
-
-def fetch_recent_prices(ticker: str = "KO", days: int = 800) -> pd.DataFrame:
-    end   = datetime.today()
-    start = end - timedelta(days=days)
-
-    for attempt in range(3):
-        df = yf.download(ticker, start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"), progress=False)
-        print(f"[DEBUG] yfinance returned {len(df)} rows for {ticker}")
-        if len(df) > 0:
-            break
-        print(f"[WARN] yfinance returned empty data, retry {attempt+1}/3...")
-        time.sleep(2)
-
-    df = df.reset_index()
-    df.columns = [c[0].lower() if isinstance(c, tuple) else c.lower()
-                  for c in df.columns]
-    df = df.rename(columns={"price": "close"}) if "price" in df.columns else df
-    df = df[["date", "open", "high", "low", "close", "volume"]].copy()
-    df = df.dropna().reset_index(drop=True)
-    print(f"[DEBUG] fetch_recent_prices returning {len(df)} rows for {ticker}")
-    return df
+def fetch_recent_prices(ticker: str = "KO", days: int = 100) -> pd.DataFrame:
+    csv_path = BASE_PATH / ticker / "merged_dataset.csv"
+    df = pd.read_csv(csv_path, usecols=["date", "open", "high", "low", "close", "volume"])
+    df["date"] = pd.to_datetime(df["date"])
+    return df.tail(days).reset_index(drop=True)
 
 
 def engineer_features(df: pd.DataFrame, sentiment: dict) -> pd.DataFrame:
@@ -119,19 +101,9 @@ def engineer_features(df: pd.DataFrame, sentiment: dict) -> pd.DataFrame:
     return df
 
 
-def get_latest_feature_row(ticker: str) -> tuple[pd.DataFrame, dict]:
-    """
-    Full pipeline: fetch prices → engineer features → return
-    last row ready for model inference.
-    Returns (feature_df, raw_price_df)
-    """
-    print(f"[INFO] Fetching latest {ticker} prices...")
-    price_df   = fetch_recent_prices(ticker, days=500)
-
-    print(f"[INFO] Loading latest {ticker} sentiment...")
-    sentiment  = load_latest_sentiment(ticker)
-
-    print(f"[INFO] Engineering features for {ticker}...")
-    feature_df = engineer_features(price_df, sentiment)
-
-    return feature_df, price_df
+def get_latest_feature_row(ticker: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    csv_path = BASE_PATH / ticker / "merged_dataset.csv"
+    df = pd.read_csv(csv_path)
+    df["date"] = pd.to_datetime(df["date"])
+    price_df = df[["date", "open", "high", "low", "close", "volume"]].copy()
+    return df, price_df
