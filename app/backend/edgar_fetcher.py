@@ -272,19 +272,30 @@ def get_highlighted_filing(
 
     print(f"[INFO] Fetching filing {accession} for {ticker}...")
 
-    # Get primaryDocument straight from submissions API (avoids broken index endpoint)
-    filings    = get_recent_filings(ticker)
-    filing_meta = next((f for f in filings if f["accession"] == accession), None)
-
-    # Build candidate document list — try primaryDocument first, then common fallbacks
     acc_clean = accession.replace("-", "")
     cik_int   = str(int(cik))
 
+    # Fetch the filing index to get the real primary document name
     candidate_docs = []
-    if filing_meta and filing_meta.get("primaryDocument"):
-        candidate_docs.append(filing_meta["primaryDocument"])
+    try:
+        index_url = f"{BASE_URL}/Archives/edgar/data/{cik_int}/{acc_clean}/{accession}-index.json"
+        idx = edgar_get(index_url, timeout=10).json()
+        files = idx.get("directory", {}).get("item", [])
+        primary = find_primary_document(files)
+        if primary:
+            candidate_docs.append(primary)
+    except Exception as e:
+        print(f"[WARN] Could not fetch filing index: {e}")
 
-    # common fallback names EDGAR uses
+    # fallback to submissions API primaryDocument
+    filings = get_recent_filings(ticker)
+    filing_meta = next((f for f in filings if f["accession"] == accession), None)
+    if filing_meta and filing_meta.get("primaryDocument"):
+        doc = filing_meta["primaryDocument"]
+        if doc not in candidate_docs:
+            candidate_docs.append(doc)
+
+    # last-resort common fallback names
     candidate_docs += [
         "form10x.htm", "form10k.htm", "form10q.htm",
         "form10-k.htm", "form10-q.htm",
