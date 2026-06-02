@@ -14,9 +14,22 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / "app" / "backend" / ".env")
 
 import psycopg2
+import pandas as pd
+from datetime import timedelta
+from pathlib import Path
 from predictor import Predictor
-from feature_engineer import get_latest_feature_row
+from feature_engineer import engineer_features, BASE_PATH
 from sentiment_loader import load_latest_sentiment
+
+def _get_feature_df(ticker: str):
+    csv_path = BASE_PATH / ticker / "merged_dataset.csv"
+    df = pd.read_csv(csv_path)
+    df["date"] = pd.to_datetime(df["date"])
+    price_cols = ["date", "open", "high", "low", "close", "volume"]
+    price_df = df[price_cols].copy()
+    sentiment = load_latest_sentiment(ticker)
+    feature_df = engineer_features(price_df, sentiment)
+    return feature_df, price_df
 
 TICKERS = ["KO", "JNJ", "PG", "WMT", "AAPL", "GOOGL"]
 
@@ -32,9 +45,9 @@ TICKER_META = {
 os.chdir(ROOT / "app" / "backend")
 
 def run():
-    db_url = os.environ.get("DATABASE_URL")
+    db_url = os.environ.get("SUPABASE_DB_URL") or os.environ.get("DATABASE_URL")
     if not db_url:
-        print("[ERROR] DATABASE_URL not set in .env")
+        print("[ERROR] SUPABASE_DB_URL not set in .env")
         sys.exit(1)
 
     predictor = Predictor()
@@ -44,14 +57,12 @@ def run():
     for ticker in TICKERS:
         print(f"\n[{ticker}] Running inference...")
         try:
-            feature_df, price_df = get_latest_feature_row(ticker)
+            feature_df, price_df = _get_feature_df(ticker)
             result    = predictor.predict(ticker, feature_df)
             sentiment = load_latest_sentiment(ticker)
             state     = predictor._load_model(ticker)
             meta      = TICKER_META[ticker]
 
-            import pandas as pd
-            from datetime import timedelta
             last_date  = pd.to_datetime(price_df["date"].iloc[-1])
             next_day   = last_date + timedelta(days=1)
 
