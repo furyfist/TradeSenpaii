@@ -246,7 +246,8 @@ def get_accuracy_stats() -> dict:
 
 def get_db_connection():
     import psycopg2, os
-    return psycopg2.connect(os.getenv("SUPABASE_DB_URL"))
+    url = os.getenv("SUPABASE_POOLER_URL") or os.getenv("SUPABASE_DB_URL")
+    return psycopg2.connect(url)
 
     return {
         r["ticker"]: {
