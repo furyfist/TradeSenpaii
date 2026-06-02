@@ -1,5 +1,7 @@
 # Cost Reduction Plan — Drop Torch, Cut Bot, Use Seeded Data
 
+**Status: IMPLEMENTED** on branch `feat/deploy-seeded-data`
+
 **Goal:** Reduce Railway memory from ~700 MB to ~150 MB (~75–80% bill reduction).  
 **Approach:** Pre-compute all predictions + signals offline → store in Postgres (Supabase) → serve from DB. Remove PyTorch, yfinance, APScheduler, and Telegram bot from the server entirely.
 
