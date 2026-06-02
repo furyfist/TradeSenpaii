@@ -207,9 +207,7 @@ multitasking==0.0.12
 curl_cffi==0.13.0
 ```
 
-Also remove the entire `app/backend/alerts/` folder — it's only used by the scheduler and bot, neither of which run on the server anymore.
-
-> **Note:** Keep `scikit-learn`, `scipy`, `numpy`, `pandas` — they're still used by `feature_engineer.py` and `explainer.py`.
+> **Note:** Keep `scikit-learn`, `scipy`, `numpy`, `pandas` — still used by `feature_engineer.py` and `explainer.py`. Do not delete `app/backend/alerts/` — `alert_store.py` is still active. The other alert files are annotated as decommissioned but kept for reference.
 
 ---
 
@@ -246,10 +244,7 @@ Files that are **unchanged and still active:**
 
 ## Order of operations
 
-1. Run seed script locally → verify all 6 tickers have rows in DB
-2. Rewrite `feature_engineer.py` (CSV reads)
-3. Write `prediction_reader.py`
-4. Update `main.py` (remove imports, update routes, simplify lifespan)
-5. Remove packages from `requirements.txt`
-6. Deploy and verify all routes respond correctly
-7. Delete dead code 
+1. Run `scripts/create_seeded_table.sql` in Supabase SQL editor
+2. Run `scripts/seed_predictions.py` locally — verify all 6 tickers upserted
+3. Deploy branch — verify all routes respond correctly
+4. Confirm Railway memory on next billing cycle
