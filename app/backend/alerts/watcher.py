@@ -1,3 +1,5 @@
+# DECOMMISSIONED: checked for direction flips and sentiment spikes every 2 hours. Only used by scheduler, removed with it. Kept for reference.
+
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 

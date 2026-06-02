@@ -1,3 +1,5 @@
+# DECOMMISSIONED: ran torch inference on .pt models. Replaced by prediction_reader.py to eliminate ~400 MB RAM from PyTorch on the server. Kept for local retraining and seed script use.
+
 import torch
 import torch.nn as nn
 import numpy as np

@@ -1,3 +1,5 @@
+# DECOMMISSIONED: ran APScheduler for morning/evening Telegram briefs and signal watcher. Removed from server startup to cut background threads and memory. Kept for reference.
+
 import sys, os
 import yfinance as yf
 from alerts.alert_store import get_accuracy_stats

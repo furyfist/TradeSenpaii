@@ -1,3 +1,5 @@
+# DECOMMISSIONED: sent Telegram messages to subscribers. Only used by scheduler, removed with it. Kept for reference.
+
 import os
 import asyncio
 from telegram import Bot

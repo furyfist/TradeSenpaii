@@ -1,3 +1,5 @@
+# DECOMMISSIONED: ran Telegram bot polling loop in a background thread. Removed with scheduler to cut memory. Kept for reference.
+
 # Polls Telegram for new messages and auto-approves matching subscribers
 
 import sys, os, asyncio

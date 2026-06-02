@@ -1,3 +1,5 @@
+# DECOMMISSIONED: formatted Telegram message bodies for morning/evening briefs. Only used by scheduler, removed with it. Kept for reference.
+
 from datetime import datetime
 
 TICKER_NAMES = {
