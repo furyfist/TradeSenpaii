@@ -180,20 +180,18 @@ def model_info(ticker: str = Query(default="KO")):
 def explain(request: Request, ticker: str = Query(default="KO")):
     ticker = validate_ticker(ticker)
     try:
-        feature_df, price_df  = get_latest_feature_row(ticker)
-        result                = predictor.predict(ticker, feature_df)
+        data                  = get_prediction(ticker)
+        feature_df, _         = get_latest_feature_row(ticker)
         sentiment             = load_latest_sentiment(ticker)
         current_features      = feature_df.iloc[-1]
 
         explanation = explain_prediction(
             ticker           = ticker,
-            prediction       = result["prediction"],
-            confidence       = result["confidence"],
-            top_signals      = result["top_signals"],
+            prediction       = data["prediction"],
+            confidence       = data["confidence"],
+            top_signals      = data["top_signals"],
             sentiment_score  = sentiment["lm_sentiment_score"],
-            sentiment_label  = "Positive" if sentiment["lm_sentiment_score"] > 0.5
-                               else ("Negative" if sentiment["lm_sentiment_score"] < -0.5
-                               else "Neutral"),
+            sentiment_label  = data["sentiment_label"],
             current_features = current_features,
         )
 
