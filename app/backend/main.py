@@ -3,14 +3,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from explainer import explain_prediction
-from alerts.scheduler import create_scheduler
-from alerts.bot_listener import create_bot_app
-import threading
 from fastapi.responses import StreamingResponse
 from auth import require_admin
 import json
@@ -24,14 +21,14 @@ from models import (
     PredictionResponse, PriceHistoryResponse,
     SentimentHistoryResponse, ModelInfoResponse,
     PricePoint, SentimentPoint, SUPPORTED_TICKERS,
-    ExplanationResponse,HypothesisRequest, HypothesisResponse
+    ExplanationResponse, HypothesisRequest, HypothesisResponse
 )
 from alerts.alert_store import (
     add_subscriber, get_all_subscribers,
     approve_subscriber, reject_subscriber
 )
 
-from predictor import Predictor
+from prediction_reader import get_prediction
 from feature_engineer import get_latest_feature_row, fetch_recent_prices
 from sentiment_loader import load_sentiment_history, load_latest_sentiment
 from hypothesis.hypothesis_parser import parse_hypothesis
@@ -43,52 +40,16 @@ from hypothesis.synthesizer       import synthesize, TICKER_FULL_NAME
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Preload models
-    print("[STARTUP] Preloading all ticker models...")
-    for ticker in SUPPORTED_TICKERS:
-        try:
-            predictor._load_model(ticker)
-            print(f"[STARTUP] {ticker} model ready")
-        except Exception as e:
-            print(f"[STARTUP] Could not load {ticker}: {e}")
-
-    # Start alert scheduler
-    scheduler = create_scheduler()
-    scheduler.start()
-    print("[STARTUP] Alert scheduler started")
-
-    # Start bot listener in background thread
-    def run_bot():
-        import asyncio
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        bot_app = create_bot_app()
-        loop.run_until_complete(bot_app.initialize())
-        loop.run_until_complete(bot_app.updater.start_polling())
-        loop.run_until_complete(bot_app.start())
-        loop.run_forever()
-
-    bot_thread = threading.Thread(target=run_bot, daemon=True)
-    bot_thread.start()
-    print("[STARTUP] Bot listener started")
-
+    print("[STARTUP] TradeSenpai API ready (seeded mode)")
     yield
 
-    scheduler.shutdown(wait=False)
-    print("[SHUTDOWN] Scheduler stopped")
-
 app = FastAPI(title="TradeSenpai API v2", version="2.0.0", lifespan=lifespan)
-
-predictor = Predictor()
 
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# Cache per ticker
-_cache: dict = {}
-CACHE_TTL_MINUTES = 30
 
 app.add_middleware(
     CORSMiddleware,
@@ -132,55 +93,20 @@ def health():
 def predict(ticker: str = Query(default="KO")):
     ticker = validate_ticker(ticker)
     try:
-        now = datetime.now()
-        if (
-            ticker in _cache and
-            _cache[ticker].get("timestamp") and
-            (now - _cache[ticker]["timestamp"]).seconds < CACHE_TTL_MINUTES * 60
-        ):
-            print(f"[INFO] Returning cached prediction for {ticker}")
-            return _cache[ticker]["prediction"]
-
-        feature_df, price_df = get_latest_feature_row(ticker)
-        print(f"[DEBUG] feature_df shape in main: {feature_df.shape}")
-        result    = predictor.predict(ticker, feature_df)
-        sentiment = load_latest_sentiment(ticker)
-
-        last_date = pd.to_datetime(price_df["date"].iloc[-1])
-        next_day  = last_date + timedelta(days=1)
-
-        response = PredictionResponse(
+        data = get_prediction(ticker)
+        return PredictionResponse(
             ticker          = ticker,
-            name            = TICKER_NAMES.get(ticker, ticker),
-            prediction      = result["prediction"],
-            confidence      = result["confidence"],
-            predicted_date  = str(next_day.date()),
-            as_of_date      = str(last_date.date()),
-            top_signals     = result["top_signals"],
-            sentiment_score = sentiment["lm_sentiment_score"],
-            sentiment_label = "Positive" if sentiment["lm_sentiment_score"] > 0.5
-                              else ("Negative" if sentiment["lm_sentiment_score"] < -0.5
-                              else "Neutral"),
-            model_accuracy  = result["cv_accuracy"],
+            name            = data["name"],
+            prediction      = data["prediction"],
+            confidence      = data["confidence"],
+            predicted_date  = data["predicted_date"],
+            as_of_date      = data["as_of_date"],
+            top_signals     = data["top_signals"],
+            sentiment_score = data["sentiment_score"],
+            sentiment_label = data["sentiment_label"],
+            model_accuracy  = data["model_accuracy"],
         )
-
-        _cache[ticker] = {"prediction": response, "timestamp": now}
-
-        # Log prediction to history (skip if cached — already logged)
-        try:
-            from alerts.alert_store import log_prediction
-            log_prediction(
-                ticker         = ticker,
-                predicted_date = str(next_day.date()),
-                prediction     = result["prediction"],
-                confidence     = result["confidence"],
-            )
-        except Exception as e:
-            print(f"[WARN] Could not log prediction for {ticker}: {e}")
-
-        return response
-
-    except Exception as e:
+    except Exception:
         import traceback
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail="Internal server error.")
@@ -231,9 +157,19 @@ def sentiment_history(ticker: str = Query(default="KO")):
 def model_info(ticker: str = Query(default="KO")):
     ticker = validate_ticker(ticker)
     try:
-        info = predictor.get_model_info(ticker)
-        return ModelInfoResponse(**info)
-    except Exception as e:
+        data = get_prediction(ticker)
+        return ModelInfoResponse(
+            ticker         = ticker,
+            name           = data["name"],
+            sector         = data["sector"],
+            cv_accuracy    = data["cv_accuracy"],
+            trained_on     = data["trained_on"],
+            input_features = data["input_features"],
+            sequence_len   = data["sequence_len"],
+            model_type     = data["model_type"],
+            last_updated   = data["trained_on"],
+        )
+    except Exception:
         import traceback
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail="Internal server error.")
