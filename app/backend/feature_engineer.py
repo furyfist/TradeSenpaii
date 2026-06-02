@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-BASE_PATH = Path(__file__).resolve().parent.parent.parent / "stock-analysis" / "data" / "processed"
+_here = Path(__file__).resolve().parent
+BASE_PATH = next(
+    p / "stock-analysis" / "data" / "processed"
+    for p in [_here, _here.parent, _here.parent.parent]
+    if (p / "stock-analysis" / "data" / "processed").exists()
+)
 
 def fetch_recent_prices(ticker: str = "KO", days: int = 100) -> pd.DataFrame:
     csv_path = BASE_PATH / ticker / "merged_dataset.csv"

@@ -3,7 +3,12 @@ import numpy as np
 from pathlib import Path
 
 # Base path 
-BASE_PATH = Path(__file__).resolve().parent.parent.parent / "stock-analysis" / "data" / "processed"
+_here = Path(__file__).resolve().parent
+BASE_PATH = next(
+    p / "stock-analysis" / "data" / "processed"
+    for p in [_here, _here.parent, _here.parent.parent]
+    if (p / "stock-analysis" / "data" / "processed").exists()
+)
 
 
 def _get_sentiment_csv(ticker: str) -> Path:

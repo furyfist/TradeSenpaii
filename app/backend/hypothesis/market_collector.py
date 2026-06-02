@@ -6,7 +6,12 @@ import pandas as pd
 from pathlib import Path
 from feature_engineer import get_latest_feature_row
 
-BASE_PATH = Path(__file__).resolve().parent.parent.parent.parent / "stock-analysis" / "data" / "processed"
+_here = Path(__file__).resolve().parent
+BASE_PATH = next(
+    p / "stock-analysis" / "data" / "processed"
+    for p in [_here, _here.parent, _here.parent.parent, _here.parent.parent.parent]
+    if (p / "stock-analysis" / "data" / "processed").exists()
+)
 
 SECTOR_MAP = {
     "KO":    "Consumer Staples",

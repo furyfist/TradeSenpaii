@@ -20,7 +20,12 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional
 
-BASE_PATH = Path(__file__).resolve().parent.parent.parent.parent / "stock-analysis" / "data" / "processed"
+_here = Path(__file__).resolve().parent
+BASE_PATH = next(
+    p / "stock-analysis" / "data" / "processed"
+    for p in [_here, _here.parent, _here.parent.parent, _here.parent.parent.parent]
+    if (p / "stock-analysis" / "data" / "processed").exists()
+)
 
 def _load_csv(ticker: str) -> pd.DataFrame:
     df = pd.read_csv(BASE_PATH / ticker / "merged_dataset.csv")
