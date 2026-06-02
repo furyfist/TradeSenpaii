@@ -2,9 +2,11 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import yfinance as yf
 import pandas as pd
+from pathlib import Path
 from feature_engineer import get_latest_feature_row
+
+BASE_PATH = Path(__file__).resolve().parent.parent.parent.parent / "stock-analysis" / "data" / "processed"
 
 SECTOR_MAP = {
     "KO":    "Consumer Staples",
@@ -44,14 +46,18 @@ def collect_market_context(ticker: str) -> dict:
     }
 
     try:
-        # ── 52-week range 
-        info = yf.Ticker(ticker).info
-        result["52w_high"] = info.get("fiftyTwoWeekHigh")
-        result["52w_low"]  = info.get("fiftyTwoWeekLow")
+        # ── Load from CSV
+        csv_df = pd.read_csv(BASE_PATH / ticker / "merged_dataset.csv")
+        csv_df["date"] = pd.to_datetime(csv_df["date"])
+        csv_df = csv_df.sort_values("date").reset_index(drop=True)
 
-        # ── Latest feature row 
-        # get_latest_feature_row returns (feature_df, sentiment_dict)
-        feature_df, sentiment = get_latest_feature_row(ticker)
+        # ── 52-week range from CSV
+        last_252 = csv_df["close"].tail(252)
+        result["52w_high"] = float(last_252.max())
+        result["52w_low"]  = float(last_252.min())
+
+        # ── Latest feature row
+        feature_df, _ = get_latest_feature_row(ticker)
 
         if feature_df is None or feature_df.empty:
             result["error"] = f"get_latest_feature_row returned empty for {ticker}"
@@ -59,9 +65,8 @@ def collect_market_context(ticker: str) -> dict:
 
         latest = feature_df.iloc[-1]
 
-        # ── Current price from yfinance (more reliable than feature lag) 
-        raw = yf.Ticker(ticker).history(period="2d")
-        current_price = float(raw["Close"].iloc[-1]) if not raw.empty else None
+        # ── Current price from CSV
+        current_price = float(csv_df["close"].iloc[-1])
         result["current_price"] = current_price
 
         # ── 52w distances 

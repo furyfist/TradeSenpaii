@@ -16,8 +16,16 @@ Ticker matching covers:
 
 import re
 import math
-import yfinance as yf
+import pandas as pd
+from pathlib import Path
 from typing import Optional
+
+BASE_PATH = Path(__file__).resolve().parent.parent.parent.parent / "stock-analysis" / "data" / "processed"
+
+def _load_csv(ticker: str) -> pd.DataFrame:
+    df = pd.read_csv(BASE_PATH / ticker / "merged_dataset.csv")
+    df["date"] = pd.to_datetime(df["date"])
+    return df.sort_values("date").reset_index(drop=True)
 
 # ─── Supported Tickers 
 TICKER_ALIASES: dict[str, list[str]] = {
@@ -215,34 +223,20 @@ def classify_hypothesis_type(text: str) -> str:
 
 
 def fetch_current_price(ticker: str) -> Optional[float]:
-    """Live price fetch via yfinance. Returns None on failure."""
     try:
-        data = yf.Ticker(ticker)
-        hist = data.history(period="2d")
-        if hist.empty:
-            return None
-        return float(hist["Close"].iloc[-1])
+        df = _load_csv(ticker)
+        return float(df["close"].iloc[-1])
     except Exception as e:
         print(f"[WARN][parser] Failed to fetch price for {ticker}: {e}")
         return None
 
 
 def get_historical_return_std(ticker: str, timeframe_days: int) -> Optional[float]:
-    """
-    Compute std deviation of rolling N-day returns for the ticker.
-    Used to flag unrealistic hypotheses.
-    Returns std as a decimal (e.g., 0.15 = 15%) or None on failure.
-    """
     try:
-        data = yf.Ticker(ticker)
-        # Fetch ~5 years for a solid distribution
-        hist = data.history(period="5y")
-        if hist.empty or len(hist) < timeframe_days + 10:
+        df = _load_csv(ticker)
+        if len(df) < timeframe_days + 10:
             return None
-
-        closes = hist["Close"]
-        # Rolling N-day return: (price_t / price_{t-N}) - 1
-        rolling_returns = closes.pct_change(periods=timeframe_days).dropna()
+        rolling_returns = df["close"].pct_change(periods=timeframe_days).dropna()
         return float(rolling_returns.std())
     except Exception as e:
         print(f"[WARN][parser] Failed to compute std for {ticker}: {e}")
